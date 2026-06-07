@@ -10,7 +10,7 @@ Der Kalender beginnt heute (Sonntag) und läuft Woche für Woche bis zum Festiva
 
 | Datei / Ordner | Beschreibung |
 |----------------|--------------|
-| [`index.html`](index.html) | **Die App** – eine Datei mit zwei Tabs: **🍽 Rezepte** (24 eiweißreiche Rezepte, Portionsrechner, Suche, eigene Rezepte, Export/Import) und **🏋️ Plan** (Kalender mit echten Daten bis zum Festival, pro Tag Training + Essensvorschläge, alles bearbeitbar). Läuft komplett offline im Browser. |
+| [`index.html`](index.html) | **Die App** – eine Datei mit zwei Tabs: **🍽 Rezepte** (27 eiweißreiche Rezepte, Portionsrechner, Suche, eigene Rezepte, Export/Import) und **🏋️ Plan** (Kalender mit echten Daten bis zum Festival, pro Tag Training + Essensvorschläge, alles bearbeitbar). Läuft komplett offline im Browser. |
 | [`data/`](data/) | **Wochen als ausgelagerte Dateien** – `week1.js` … `week6.js`. Jede Woche definiert ihren Trainingsplan (und optional feste Gerichte pro Tag). Hier kannst du den Plan direkt bearbeiten. |
 | [`PLAN.md`](PLAN.md) | Der 6-Wochen-Plan als reines Markdown — Textquelle/Backup zum Nachlesen ohne Browser. |
 
@@ -27,7 +27,7 @@ Die Rezepte werden lokal im Browser (`localStorage`) gespeichert. Für den Wechs
 ## Features der App
 
 **🍽 Rezepte**
-- 24 vorbereitete Rezepte (Frühstück / Hauptgericht / Snack)
+- 27 vorbereitete Rezepte (Frühstück / Hauptgericht / Snack)
 - Portionsrechner — Mengen passen sich automatisch an
 - Suche nach Rezept oder Zutat, Filter nach Kategorie
 - Eigene Rezepte hinzufügen, bearbeiten, löschen
@@ -37,7 +37,8 @@ Die Rezepte werden lokal im Browser (`localStorage`) gespeichert. Für den Wechs
 - **Echter Kalender** ab heute (7. Juni): Trainingsstart mit **Workout A**, danach der Zyklus A · Lauf · B · HIIT · C · Lauf/Erholung · Ruhe
 - **Monats- und Wochenansicht** umschaltbar; mit ‹ › beliebig weit blätterbar – der Plan läuft auch nach dem Festival weiter
 - Heutiger Tag und die **Festival-Tage (17.–19. Juli)** sind markiert
-- **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack); die automatischen Vorschläge stammen aus dem **ersten Essensplan** (Original-Gerichte, z. B. heute der Linsen-Dal) – die übrigen Rezepte bleiben in der Rezepte-Liste und per „Tag bearbeiten" wählbar
+- **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack) aus dem **ersten Essensplan**
+- **Batch-Kochen / Reste**: Gerichte bleiben passend zu ihrer Portionszahl mehrere Tage im Plan (z. B. Linsen-Dal 3 Tage, Frittata 2 Tage) und werden als „♻ Reste" markiert
 - **Tag bearbeiten**: Training und jede Mahlzeit pro Tag frei wählbar; Änderungen lokal gespeichert, „Zurücksetzen" stellt den Plan-Standard wieder her
 - Fortschritts-Tracker über die 6 Plan-Wochen; Trainingstage abhaken, Balken zählt mit
 - Ernährung mit Makro-Zielen, Eiweißquellen, Beispieltag & Einkaufsliste; Festival-Tapering & Tipps zu Rauchstopp/Alkohol

@@ -636,7 +636,19 @@ const DEFAULTS=[
   {id:'r24',emoji:'🍫',cat:'Snack',title:'Skyr mit Kakao & Nüssen',servings:1,
    ings:[{a:200,u:'g',n:'laktosefreier Skyr'},{a:1,u:'TL',n:'Kakao'},{a:1,u:'TL',n:'Honig'},{a:15,u:'g',n:'Nüsse'}],
    steps:['Skyr mit Kakao und Honig verrühren.','Mit Nüssen toppen.'],
-   notes:'≈ 230 kcal / 22 g Eiweiß. Perfekt abends.'}
+   notes:'≈ 230 kcal / 22 g Eiweiß. Perfekt abends.'},
+  {id:'r25',emoji:'🍲',cat:'Hauptgericht',title:'Gemüse-Linsen-Eintopf',servings:3,
+   ings:[{a:200,u:'g',n:'braune oder grüne Linsen'},{a:2,u:'Stück',n:'Karotten'},{a:2,u:'Stück',n:'Kartoffeln'},{a:1,u:'Stück',n:'Zwiebel'},{a:1,u:'Stange',n:'Lauch oder Sellerie'},{a:800,u:'ml',n:'Gemüsebrühe'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'TL',n:'Majoran'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Zwiebel und Gemüse würfeln und im Öl anbraten.','Linsen und Brühe zugeben.','~30 min köcheln, bis die Linsen weich sind.','Mit Majoran und Salz abschmecken.'],
+   notes:'≈ 520 kcal / 24 g Eiweiß pro Portion. Hält 3 Tage, friert gut ein.'},
+  {id:'r26',emoji:'🥘',cat:'Hauptgericht',title:'Ofengemüse mit Kichererbsen & Reis',servings:3,
+   ings:[{a:480,u:'g',n:'Kichererbsen (Dose, abgetropft)'},{a:1,u:'Stück',n:'Zucchini'},{a:1,u:'Stück',n:'Paprika'},{a:1,u:'Stück',n:'Aubergine'},{a:240,u:'g',n:'Reis (roh)'},{a:2,u:'EL',n:'Olivenöl'},{a:1,u:'TL',n:'Paprikapulver'},{a:1,u:'TL',n:'Kreuzkümmel'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Gemüse und Kichererbsen mit Öl und Gewürzen mischen.','Bei 200 °C ca. 30 min backen.','Reis nach Packung kochen.','Zusammen servieren.'],
+   notes:'≈ 580 kcal / 20 g Eiweiß pro Portion. Top zum Vorkochen.'},
+  {id:'r27',emoji:'🌽',cat:'Hauptgericht',title:'Mais-Bohnen-Pfanne mit Reis',servings:2,
+   ings:[{a:400,u:'g',n:'schwarze Bohnen (Dose, abgetropft)'},{a:150,u:'g',n:'Mais (abgetropft)'},{a:1,u:'Stück',n:'Paprika'},{a:1,u:'Stück',n:'Zwiebel'},{a:160,u:'g',n:'Reis (roh)'},{a:1,u:'EL',n:'Öl'},{a:1,u:'TL',n:'Paprikapulver'},{a:1,u:'Spritzer',n:'Limette'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Zwiebel und Paprika im Öl anbraten.','Bohnen, Mais und Paprikapulver zugeben, ~8 min braten.','Reis kochen.','Mit Salz und Limette abschmecken, mit Reis servieren.'],
+   notes:'≈ 540 kcal / 20 g Eiweiß pro Portion.'}
 ];
 
 let recipes=load();
@@ -678,9 +690,12 @@ const DOW=['So','Mo','Di','Mi','Do','Fr','Sa'];
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 // [key, Anzeige-Label, passende Rezept-Kategorie]
 const SLOTS=[['fr','Frühstück','Frühstück'],['mi','Mittag','Hauptgericht'],['ab','Abend','Hauptgericht'],['sn','Snack','Snack']];
-// Automatische Tages-Vorschläge kommen aus dem ersten Essensplan (Original-Rezepte r01–r12).
-// Die zusätzlichen Gerichte bleiben in der Rezepte-Liste und per „✎ Tag bearbeiten" wählbar.
-const PLAN_POOL={'Frühstück':['r01','r02','r03'],'Hauptgericht':['r04','r05','r06','r07','r08','r09','r10'],'Snack':['r11','r12']};
+// Automatische Tages-Vorschläge folgen dem ersten Essensplan und planen Batch-Gerichte
+// über mehrere Tage (Reste) – passend zur Portionszahl, z. B. Linsen-Dal 3 Tage, Frittata 2 Tage.
+const BREAKFASTS=['r01','r02','r03'];          // täglich frisch (rotierend)
+const LUNCHES=['r04','r08','r25','r26','r07']; // Mittag-Batch: Dal, Chili, Eintopf, Ofengemüse, Makrele
+const DINNERS=['r05','r09','r06','r27','r10']; // Abend-Batch: Tofu, Frittata, Curry, Mais-Bohnen, Edamame
+const SNACKS=['r11','r12'];                     // täglich (rotierend)
 const ACTIVITIES={
   A:{emoji:'🔥',name:'Workout A – Push + Beine',rounds:'3 Runden · ~60–90 s Pause',ex:[
     'Liegestütze – 10–15 Wdh (Knie ablegen wenn nötig)','Kniebeugen – 20 Wdh (mit Rucksack = härter)','Pike Push-ups – 8–12 Wdh','Ausfallschritte – 10 pro Bein','Dips an Stuhl-/Couchkante – 10–15 Wdh','Plank – 30–45 s']},
@@ -723,18 +738,35 @@ function loadJSON(k){try{const r=localStorage.getItem(k);if(r){const d=JSON.pars
 function persistPlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(planDone));}catch(e){}}
 function persistOverrides(){try{localStorage.setItem(DOVR_KEY,JSON.stringify(dayOverrides));}catch(e){}}
 function effAct(d){const b=baseForDate(d);const o=dayOverrides[ymd(d)]||{};return o.act||(b?b.act:'');}
-function autoPick(cat,o,off){
-  let ids=(PLAN_POOL[cat]||[]).filter(id=>getRecipe(id));
-  if(!ids.length){const a=recipes.filter(r=>r.cat===cat);if(!a.length)return '';ids=a.map(r=>r.id);}
-  const s=o+off;return ids[((s%ids.length)+ids.length)%ids.length];
+function pickDaily(ids,off){ids=ids.filter(id=>getRecipe(id));if(!ids.length)return '';return ids[((off%ids.length)+ids.length)%ids.length];}
+function pickBatch(ids,off){
+  ids=ids.filter(id=>getRecipe(id));if(!ids.length)return '';
+  const spans=ids.map(id=>{const r=getRecipe(id);return Math.max(1,Math.min(3,(r&&r.servings)||1));}); // 1 Portion = 1 Tag im Plan
+  const cyc=spans.reduce((a,b)=>a+b,0);let p=((off%cyc)+cyc)%cyc;
+  for(let i=0;i<ids.length;i++){if(p<spans[i])return ids[i];p-=spans[i];}
+  return ids[0];
+}
+function autoMeal(slot,off){
+  if(slot==='fr')return pickDaily(BREAKFASTS,off);
+  if(slot==='sn')return pickDaily(SNACKS,off);
+  if(slot==='mi')return pickBatch(LUNCHES,off);
+  if(slot==='ab')return pickBatch(DINNERS,off);
+  return '';
 }
 function effMeals(d){
   const o=offsetOf(d);const b=(baseForDate(d)||{}).meals||{};const ov=(dayOverrides[ymd(d)]||{}).meals||{};
-  const g=(slot,cat,off)=>ov[slot]!==undefined?ov[slot]:(b[slot]!==undefined?b[slot]:autoPick(cat,o,off));
-  return {fr:g('fr','Frühstück',0),mi:g('mi','Hauptgericht',1),ab:g('ab','Hauptgericht',5),sn:g('sn','Snack',2)};
+  const g=(slot)=>ov[slot]!==undefined?ov[slot]:(b[slot]!==undefined?b[slot]:autoMeal(slot,o));
+  return {fr:g('fr'),mi:g('mi'),ab:g('ab'),sn:g('sn')};
 }
 function getRecipe(id){return recipes.find(r=>r.id===id);}
-function dayMenu(d){const m=effMeals(d);return SLOTS.map(([key,label])=>({slot:label,key,r:getRecipe(m[key])})).filter(x=>x.r);}
+function dayMenu(d){
+  const m=effMeals(d);const prev=effMeals(new Date(midnight(d).getTime()-DAY_MS));
+  return SLOTS.map(([key,label])=>{
+    const r=getRecipe(m[key]);
+    const left=(key==='mi'||key==='ab')&&!!r&&prev[key]===m[key]&&offsetOf(d)>0; // gleiches Gericht wie gestern = Reste
+    return {slot:label,key,r,left};
+  }).filter(x=>x.r);
+}
 function updateProg(){
   let total=0,done=0;
   for(let o=0;o<NUM_WEEKS*7;o++){const d=new Date(START_DATE.getTime()+o*DAY_MS);if(effAct(d)!=='REST'){total++;if(planDone[ymd(d)])done++;}}
@@ -777,7 +809,7 @@ function renderCalendar(){
     for(let i=0;i<7;i++){
       const d=new Date(ws.getTime()+i*DAY_MS);const before=offsetOf(d)<0;const act=effAct(d);const A=ACTIVITIES[act];
       const rest=before||act==='REST'||!act;const done=!rest&&!!planDone[ymd(d)];const fest=isFestival(d);const today=isToday(d);
-      const chips=before?'':dayMenu(d).map(mm=>`<span>${mm.r.emoji||'🍽️'} ${esc(mm.r.title)}</span>`).join('');
+      const chips=before?'':dayMenu(d).map(mm=>`<span>${mm.left?'♻ ':''}${mm.r.emoji||'🍽️'} ${esc(mm.r.title)}</span>`).join('');
       html+=`<div class="wkrow${today?' today':''}${fest?' fest':''}" data-d="${ymd(d)}">
         <div class="wkleft"><span class="wkdow">${DOW[d.getDay()]}</span><span class="wkdate">${fmtDate(d)}</span></div>
         <div class="wkmain"><div class="wktrain">${before?'— vor dem Start':(done?'✓ ':'')+(fest?'🎪 ':'')+(A?A.emoji+' '+esc(A.name):'—')}</div><div class="wkmeals">${chips||'<span class="muted">—</span>'}</div></div>
@@ -826,7 +858,7 @@ function openDay(ymdStr,edit){
     const menuHtml=menu.length?menu.map(m=>`
       <button data-rid="${m.r.id}">
         <span class="rem">${m.r.emoji||'🍽️'}</span>
-        <span class="rinfo"><span class="rcat">${m.slot}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
+        <span class="rinfo"><span class="rcat">${m.slot}${m.left?' · ♻ Reste':''}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
         <span class="rarw">›</span>
       </button>`).join(''):'<p style="color:var(--faint);font-size:.88rem">Keine Gerichte zugewiesen – über „✎ Tag bearbeiten" hinzufügen.</p>';
     body=`
@@ -1033,7 +1065,7 @@ document.getElementById('importFile').onchange=e=>{
   fr.readAsText(file);e.target.value='';
 };
 document.getElementById('resetBtn').onclick=()=>{
-  if(confirm('Auf die 24 Original-Rezepte zurücksetzen? Eigene Rezepte gehen verloren.')){
+  if(confirm('Auf die 27 Original-Rezepte zurücksetzen? Eigene Rezepte gehen verloren.')){
     recipes=JSON.parse(JSON.stringify(DEFAULTS));detailServings={};persist();renderGrid();renderChips();toast('Zurückgesetzt');
   }
 };
