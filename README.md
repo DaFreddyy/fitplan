@@ -37,7 +37,7 @@ Die Rezepte werden lokal im Browser (`localStorage`) gespeichert. Für den Wechs
 - **Echter Kalender** ab heute (7. Juni): Trainingsstart mit **Workout A**, danach der Zyklus A · Lauf · B · HIIT · C · Lauf/Erholung · Ruhe
 - **Monats- und Wochenansicht** umschaltbar; mit ‹ › beliebig weit blätterbar – der Plan läuft auch nach dem Festival weiter
 - Heutiger Tag und die **Festival-Tage (17.–19. Juli)** sind markiert
-- **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack)
+- **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack); die automatischen Vorschläge stammen aus dem **ersten Essensplan** (Original-Gerichte, z. B. heute der Linsen-Dal) – die übrigen Rezepte bleiben in der Rezepte-Liste und per „Tag bearbeiten" wählbar
 - **Tag bearbeiten**: Training und jede Mahlzeit pro Tag frei wählbar; Änderungen lokal gespeichert, „Zurücksetzen" stellt den Plan-Standard wieder her
 - Fortschritts-Tracker über die 6 Plan-Wochen; Trainingstage abhaken, Balken zählt mit
 - Ernährung mit Makro-Zielen, Eiweißquellen, Beispieltag & Einkaufsliste; Festival-Tapering & Tipps zu Rauchstopp/Alkohol

@@ -678,6 +678,9 @@ const DOW=['So','Mo','Di','Mi','Do','Fr','Sa'];
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 // [key, Anzeige-Label, passende Rezept-Kategorie]
 const SLOTS=[['fr','Frühstück','Frühstück'],['mi','Mittag','Hauptgericht'],['ab','Abend','Hauptgericht'],['sn','Snack','Snack']];
+// Automatische Tages-Vorschläge kommen aus dem ersten Essensplan (Original-Rezepte r01–r12).
+// Die zusätzlichen Gerichte bleiben in der Rezepte-Liste und per „✎ Tag bearbeiten" wählbar.
+const PLAN_POOL={'Frühstück':['r01','r02','r03'],'Hauptgericht':['r04','r05','r06','r07','r08','r09','r10'],'Snack':['r11','r12']};
 const ACTIVITIES={
   A:{emoji:'🔥',name:'Workout A – Push + Beine',rounds:'3 Runden · ~60–90 s Pause',ex:[
     'Liegestütze – 10–15 Wdh (Knie ablegen wenn nötig)','Kniebeugen – 20 Wdh (mit Rucksack = härter)','Pike Push-ups – 8–12 Wdh','Ausfallschritte – 10 pro Bein','Dips an Stuhl-/Couchkante – 10–15 Wdh','Plank – 30–45 s']},
@@ -720,7 +723,11 @@ function loadJSON(k){try{const r=localStorage.getItem(k);if(r){const d=JSON.pars
 function persistPlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(planDone));}catch(e){}}
 function persistOverrides(){try{localStorage.setItem(DOVR_KEY,JSON.stringify(dayOverrides));}catch(e){}}
 function effAct(d){const b=baseForDate(d);const o=dayOverrides[ymd(d)]||{};return o.act||(b?b.act:'');}
-function autoPick(cat,o,off){const a=recipes.filter(r=>r.cat===cat);if(!a.length)return '';const s=o+off;return a[((s%a.length)+a.length)%a.length].id;}
+function autoPick(cat,o,off){
+  let ids=(PLAN_POOL[cat]||[]).filter(id=>getRecipe(id));
+  if(!ids.length){const a=recipes.filter(r=>r.cat===cat);if(!a.length)return '';ids=a.map(r=>r.id);}
+  const s=o+off;return ids[((s%ids.length)+ids.length)%ids.length];
+}
 function effMeals(d){
   const o=offsetOf(d);const b=(baseForDate(d)||{}).meals||{};const ov=(dayOverrides[ymd(d)]||{}).meals||{};
   const g=(slot,cat,off)=>ov[slot]!==undefined?ov[slot]:(b[slot]!==undefined?b[slot]:autoPick(cat,o,off));
