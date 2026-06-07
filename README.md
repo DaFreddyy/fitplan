@@ -34,10 +34,12 @@ Die Rezepte werden lokal im Browser (`localStorage`) gespeichert. Für den Wechs
 - Export/Import als JSON, Zurücksetzen auf die Original-Rezepte
 
 **🏋️ Plan**
-- Kalender mit **echten Daten** vom 8. Juni bis zum Festival (17.–19. Juli, Festival-Tage markiert)
-- **Tag antippen** → öffnet Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack)
-- **Tag bearbeiten**: Training und jede Mahlzeit pro Tag frei wählbar; Änderungen werden lokal gespeichert, „Zurücksetzen" stellt den Plan-Standard wieder her
-- Fortschritts-Tracker: Trainingstage abhaken, Balken zählt automatisch mit
+- **Echter Kalender** ab heute (7. Juni): Trainingsstart mit **Workout A**, danach der Zyklus A · Lauf · B · HIIT · C · Lauf/Erholung · Ruhe
+- **Monats- und Wochenansicht** umschaltbar; mit ‹ › beliebig weit blätterbar – der Plan läuft auch nach dem Festival weiter
+- Heutiger Tag und die **Festival-Tage (17.–19. Juli)** sind markiert
+- **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack)
+- **Tag bearbeiten**: Training und jede Mahlzeit pro Tag frei wählbar; Änderungen lokal gespeichert, „Zurücksetzen" stellt den Plan-Standard wieder her
+- Fortschritts-Tracker über die 6 Plan-Wochen; Trainingstage abhaken, Balken zählt mit
 - Ernährung mit Makro-Zielen, Eiweißquellen, Beispieltag & Einkaufsliste; Festival-Tapering & Tipps zu Rauchstopp/Alkohol
 
 ### Plan bearbeiten (für Tüftler)

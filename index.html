@@ -131,21 +131,45 @@
   .progbar{height:12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
   .progbar i{display:block;height:100%;background:var(--grad);width:0;transition:width .45s ease}
 
-  /* tracker */
-  .tracker{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
-  table.tk{border-collapse:separate;border-spacing:6px;min-width:520px}
-  table.tk th{font-size:.72rem;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding-bottom:2px}
-  table.tk td.wk{color:var(--muted);font-size:.84rem;font-weight:700;white-space:nowrap;padding-right:4px;text-align:left;font-family:var(--display)}
-  .daycell{width:58px;height:48px;border:1px solid var(--line);background:var(--surface);border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:all .12s;color:var(--muted)}
-  .daycell .ico{font-size:1rem;line-height:1}
-  .daycell small{font-size:.6rem;letter-spacing:.03em}
+  /* kalender */
+  .calnav{display:flex;align-items:center;gap:8px;margin:6px 0 14px;flex-wrap:wrap}
+  .calnav .navbtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.2rem;line-height:1;cursor:pointer}
+  .calnav .navbtn:hover{border-color:var(--coral)}
+  #calLabel{font-family:var(--display);font-weight:800;font-size:1.02rem;min-width:140px;text-align:center}
+  .calnav .today-btn{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:10px;padding:0 13px;height:38px;cursor:pointer;font-size:.85rem;font-weight:600}
+  .calnav .today-btn:hover{border-color:var(--coral);color:var(--ink)}
+  #calViews{margin-left:auto;display:flex;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px}
+  #calViews button{border:none;background:transparent;color:var(--muted);font-family:var(--body);font-weight:600;font-size:.85rem;padding:7px 13px;border-radius:8px;cursor:pointer}
+  #calViews button.active{background:var(--grad);color:#1a1024}
+  .calhead{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px}
+  .calhead span{text-align:center;font-size:.7rem;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .daycell{position:relative;aspect-ratio:1/1;min-height:50px;border:1px solid var(--line);background:var(--surface);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:var(--muted)}
+  .daycell .dn{position:absolute;top:5px;left:7px;font-size:.7rem;color:var(--faint);font-weight:600}
+  .daycell .ico{font-size:1.15rem;line-height:1}
   .daycell:hover{border-color:var(--coral);transform:translateY(-2px)}
-  .daycell.done{background:var(--grad);border-color:transparent;color:#1a1024;font-weight:700}
+  .daycell.done{background:var(--grad);border-color:transparent;color:#1a1024}
+  .daycell.done .dn{color:#1a1024}
   .daycell.rest{opacity:.6}
   .daycell.fest{border-color:var(--tangerine);box-shadow:inset 0 0 0 1px var(--tangerine);opacity:1}
   .daycell.fest.done{box-shadow:none}
   .daycell.today{outline:2px solid var(--coral);outline-offset:1px}
-  .wknote{font-size:.7rem;color:var(--tangerine);margin-top:2px;font-family:var(--body);font-weight:600}
+  .daycell.faded{opacity:.3}
+  .daycell.faded:hover{transform:none}
+  .calweek{display:flex;flex-direction:column;gap:8px}
+  .wkrow{display:flex;align-items:center;gap:13px;border:1px solid var(--line);background:var(--surface);border-radius:13px;padding:12px 14px;cursor:pointer;transition:all .12s}
+  .wkrow:hover{border-color:var(--coral);transform:translateY(-2px)}
+  .wkrow.today{outline:2px solid var(--coral);outline-offset:1px}
+  .wkrow.fest{border-color:var(--tangerine)}
+  .wkleft{display:flex;flex-direction:column;align-items:center;min-width:44px;flex-shrink:0}
+  .wkleft .wkdow{font-family:var(--display);font-weight:800;font-size:1.05rem}
+  .wkleft .wkdate{font-size:.72rem;color:var(--faint)}
+  .wkmain{flex:1;min-width:0}
+  .wktrain{font-weight:600;font-size:.94rem;margin-bottom:5px}
+  .wkmeals{display:flex;flex-wrap:wrap;gap:5px}
+  .wkmeals span{font-size:.72rem;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:var(--muted);max-width:165px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wkmeals .muted{background:transparent;border:none;padding-left:0}
+  .wkrow .rarw{color:var(--faint);font-size:1.2rem;flex-shrink:0}
 
   /* workout cards */
   .wcard{border:1px solid var(--line);background:var(--surface);border-radius:14px;margin-bottom:10px;overflow:hidden}
@@ -313,13 +337,20 @@
 
     <!-- Fortschritt -->
     <div class="psec">
-      <h3>📅 Fortschritt</h3>
+      <h3>📅 Kalender</h3>
       <div class="progwrap">
-        <div class="barhead"><span>Erledigte Trainingseinheiten</span><b id="progTxt">0 / 36</b></div>
+        <div class="barhead"><span>Plan-Fortschritt (6 Wochen bis zum Festival)</span><b id="progTxt">0 / 33</b></div>
         <div class="progbar"><i id="progBar"></i></div>
       </div>
-      <div class="tracker" id="tracker"></div>
-      <div class="callout">Tippe auf einen Tag, um <strong>Training &amp; Essensvorschläge</strong> zu sehen und ihn abzuhaken – wird lokal auf diesem Gerät gespeichert. Ruhetage (So) zählen nicht zum Trainingsziel.</div>
+      <div class="calnav">
+        <button class="navbtn" id="calPrev" title="zurück">‹</button>
+        <div id="calLabel"></div>
+        <button class="navbtn" id="calNext" title="weiter">›</button>
+        <button class="today-btn" id="calToday">Heute</button>
+        <div id="calViews"><button data-cv="month" class="active">Monat</button><button data-cv="week">Woche</button></div>
+      </div>
+      <div id="calBody"></div>
+      <div class="callout">Tippe auf einen Tag für <strong>Training &amp; Essen</strong> (abhaken oder bearbeiten). Mit ‹ › blätterst du durch die Monate – der Plan läuft auch nach dem Festival weiter. Für mehr Details die <strong>Wochenansicht</strong> nutzen.</div>
     </div>
 
     <!-- Wochenstruktur -->
@@ -639,15 +670,14 @@ function switchView(v){
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 document.getElementById('toRecipes').onclick=()=>switchView('recipes');
 
-/* ---------- plan tracker ---------- */
-const PLAN_KEY='parookaville_plan_v1';
-const WEEK=[
-  {d:'So',ico:'😴',act:'REST',rest:true},
-  {d:'Mo',ico:'💪',act:'A'},{d:'Di',ico:'🏃',act:'LAUF'},{d:'Mi',ico:'💪',act:'B'},
-  {d:'Do',ico:'⚡',act:'HIIT'},{d:'Fr',ico:'💪',act:'C'},{d:'Sa',ico:'🏃',act:'LAUF_SA'}
-];
-const WEEK_NOTES={5:'schwerste Woche',6:'Tapering'};
-const DAYNAMES={Mo:'Montag',Di:'Dienstag',Mi:'Mittwoch',Do:'Donnerstag',Fr:'Freitag',Sa:'Samstag',So:'Sonntag'};
+/* ---------- plan: kalender (datum-basiert) ---------- */
+const PLAN_KEY='parookaville_plan_v1';   // erledigte Trainingstage: { 'YYYY-MM-DD': true }
+const DOVR_KEY='parookaville_days_v1';     // pro-Tag-Overrides: { 'YYYY-MM-DD': {act, meals} }
+const CYCLE=['A','LAUF','B','HIIT','C','LAUF_SA','REST']; // Trainingszyklus ab Start (Tag 1 = Workout A)
+const DOW=['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+// [key, Anzeige-Label, passende Rezept-Kategorie]
+const SLOTS=[['fr','Frühstück','Frühstück'],['mi','Mittag','Hauptgericht'],['ab','Abend','Hauptgericht'],['sn','Snack','Snack']];
 const ACTIVITIES={
   A:{emoji:'🔥',name:'Workout A – Push + Beine',rounds:'3 Runden · ~60–90 s Pause',ex:[
     'Liegestütze – 10–15 Wdh (Knie ablegen wenn nötig)','Kniebeugen – 20 Wdh (mit Rucksack = härter)','Pike Push-ups – 8–12 Wdh','Ausfallschritte – 10 pro Bein','Dips an Stuhl-/Couchkante – 10–15 Wdh','Plank – 30–45 s']},
@@ -663,79 +693,112 @@ const ACTIVITIES={
 };
 const WEEKS=window.PFL_WEEKS||{};
 const NUM_WEEKS=6;
-// [key, Anzeige-Label, passende Rezept-Kategorie]
-const SLOTS=[['fr','Frühstück','Frühstück'],['mi','Mittag','Hauptgericht'],['ab','Abend','Hauptgericht'],['sn','Snack','Snack']];
-const START_DATE=new Date(2026,5,7); // So 7. Juni 2026 (Tag 1, heute) – läuft bis zum Festival
-function dateOf(w,i){const d=new Date(START_DATE);d.setDate(d.getDate()+(w-1)*7+i);return d;}
+const DAY_MS=86400000;
+const START_DATE=(function(){const d=new Date(2026,5,7);d.setHours(0,0,0,0);return d;})(); // So 7.6.2026, Tag 1 (heute) – Trainingsstart mit Workout A
+function midnight(x){const d=new Date(x);d.setHours(0,0,0,0);return d;}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function offsetOf(d){return Math.round((midnight(d)-START_DATE)/DAY_MS);}
 function fmtDate(d){return d.getDate()+'.'+(d.getMonth()+1)+'.';}
-function isFestival(w,i){const d=dateOf(w,i);return d.getMonth()===6&&d.getDate()>=17&&d.getDate()<=19;} // 17.–19. Juli
-function isToday(w,i){const d=dateOf(w,i),t=new Date();return d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth()&&d.getDate()===t.getDate();}
-// pro-Tag-Overrides (vom Nutzer bearbeitet) liegen über den Wochen-Dateien
-const DOVR_KEY='parookaville_days_v1';
-let dayOverrides=loadOverrides();
-function loadOverrides(){try{const r=localStorage.getItem(DOVR_KEY);if(r){const d=JSON.parse(r);if(d&&typeof d==='object')return d;}}catch(e){}return {};}
-function persistOverrides(){try{localStorage.setItem(DOVR_KEY,JSON.stringify(dayOverrides));}catch(e){}}
-function baseDay(w,i){
-  let e=WEEKS[w]&&WEEKS[w].days&&WEEKS[w].days[i];
-  if(typeof e==='string')e={act:e};
-  if(!e||!e.act)e={act:(WEEK[i]&&WEEK[i].act)||'REST',meals:(e&&e.meals)||{}};
-  return {act:e.act,meals:e.meals||{}};
+function isFestival(d){return d.getFullYear()===2026&&d.getMonth()===6&&d.getDate()>=17&&d.getDate()<=19;} // 17.–19. Juli
+function isToday(d){return offsetOf(d)===offsetOf(new Date());}
+function inPlan(d){const o=offsetOf(d);return o>=0&&o<NUM_WEEKS*7;}
+// Basis für ein Datum: erste 6 Wochen aus data/weekN.js, danach fortlaufender Zyklus
+function baseForDate(d){
+  const o=offsetOf(d);
+  if(o<0)return null;
+  if(o<NUM_WEEKS*7){
+    const wk=WEEKS[Math.floor(o/7)+1];let e=wk&&wk.days&&wk.days[o%7];
+    if(typeof e==='string')e={act:e};
+    if(!e||!e.act)e={act:CYCLE[o%7],meals:(e&&e.meals)||{}};
+    return {act:e.act,meals:e.meals||{}};
+  }
+  return {act:CYCLE[((o%7)+7)%7],meals:{}};
 }
-function effAct(w,i){const o=dayOverrides['w'+w+'-'+i]||{};return o.act||baseDay(w,i).act;}
-function autoPick(cat,w,i,off){const a=recipes.filter(r=>r.cat===cat);if(!a.length)return '';const s=(w-1)*7+i+off;return a[((s%a.length)+a.length)%a.length].id;}
-function effMeals(w,i){
-  const b=baseDay(w,i).meals;const o=(dayOverrides['w'+w+'-'+i]||{}).meals||{};
-  const g=(slot,cat,off)=>o[slot]!==undefined?o[slot]:(b[slot]!==undefined?b[slot]:autoPick(cat,w,i,off));
+let planDone=loadJSON(PLAN_KEY);
+let dayOverrides=loadJSON(DOVR_KEY);
+function loadJSON(k){try{const r=localStorage.getItem(k);if(r){const d=JSON.parse(r);if(d&&typeof d==='object')return d;}}catch(e){}return {};}
+function persistPlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(planDone));}catch(e){}}
+function persistOverrides(){try{localStorage.setItem(DOVR_KEY,JSON.stringify(dayOverrides));}catch(e){}}
+function effAct(d){const b=baseForDate(d);const o=dayOverrides[ymd(d)]||{};return o.act||(b?b.act:'');}
+function autoPick(cat,o,off){const a=recipes.filter(r=>r.cat===cat);if(!a.length)return '';const s=o+off;return a[((s%a.length)+a.length)%a.length].id;}
+function effMeals(d){
+  const o=offsetOf(d);const b=(baseForDate(d)||{}).meals||{};const ov=(dayOverrides[ymd(d)]||{}).meals||{};
+  const g=(slot,cat,off)=>ov[slot]!==undefined?ov[slot]:(b[slot]!==undefined?b[slot]:autoPick(cat,o,off));
   return {fr:g('fr','Frühstück',0),mi:g('mi','Hauptgericht',1),ab:g('ab','Hauptgericht',5),sn:g('sn','Snack',2)};
 }
-let planDone=loadPlan();
-function loadPlan(){try{const r=localStorage.getItem(PLAN_KEY);if(r){const d=JSON.parse(r);if(d&&typeof d==='object')return d;}}catch(e){}return {};}
-function persistPlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(planDone));}catch(e){}}
-function renderTracker(){
-  const el=document.getElementById('tracker');
-  const dows=['So','Mo','Di','Mi','Do','Fr','Sa'];
-  let html='<table class="tk"><thead><tr><th></th>'+dows.map(d=>`<th>${d}</th>`).join('')+'</tr></thead><tbody>';
-  for(let w=1;w<=NUM_WEEKS;w++){
-    const note=(WEEKS[w]&&WEEKS[w].note)||WEEK_NOTES[w]||'';
-    html+=`<tr><td class="wk">W${w}${note?`<div class="wknote">${esc(note)}</div>`:''}</td>`;
-    for(let i=0;i<7;i++){
-      const act=effAct(w,i);const rest=act==='REST';const fest=isFestival(w,i);
-      const k='w'+w+'-'+i;const on=!rest&&!!planDone[k];
-      const ic=ACTIVITIES[act]?ACTIVITIES[act].emoji:'•';
-      const cls='daycell'+(rest?' rest':'')+(on?' done':'')+(fest?' fest':'')+(isToday(w,i)?' today':'');
-      html+=`<td><div class="${cls}" data-w="${w}" data-i="${i}" title="Woche ${w} · ${dateOf(w,i).toLocaleDateString('de-DE')}"><span class="ico">${on?'✓':(fest?'🎪':ic)}</span><small>${fmtDate(dateOf(w,i))}</small></div></td>`;
-    }
-    html+='</tr>';
-  }
-  html+='</tbody></table>';
-  el.innerHTML=html;
-  el.querySelectorAll('.daycell[data-w]').forEach(c=>c.onclick=()=>openDay(+c.dataset.w,+c.dataset.i));
-  updateProg();
-}
+function getRecipe(id){return recipes.find(r=>r.id===id);}
+function dayMenu(d){const m=effMeals(d);return SLOTS.map(([key,label])=>({slot:label,key,r:getRecipe(m[key])})).filter(x=>x.r);}
 function updateProg(){
   let total=0,done=0;
-  for(let w=1;w<=NUM_WEEKS;w++)for(let i=0;i<7;i++){if(effAct(w,i)!=='REST'){total++;if(planDone['w'+w+'-'+i])done++;}}
+  for(let o=0;o<NUM_WEEKS*7;o++){const d=new Date(START_DATE.getTime()+o*DAY_MS);if(effAct(d)!=='REST'){total++;if(planDone[ymd(d)])done++;}}
   document.getElementById('progTxt').textContent=done+' / '+total;
   document.getElementById('progBar').style.width=(total?done/total*100:0)+'%';
 }
+/* ----- Kalender: Monats- & Wochenansicht, beliebig weit blätterbar ----- */
+let calView='month';
+let calCursor=midnight(new Date());
+function setCalView(v){calView=v;document.querySelectorAll('#calViews button').forEach(b=>b.classList.toggle('active',b.dataset.cv===v));renderCalendar();}
+function calStep(dir){
+  if(calView==='month')calCursor=new Date(calCursor.getFullYear(),calCursor.getMonth()+dir,1);
+  else calCursor=midnight(new Date(calCursor.getTime()+dir*7*DAY_MS));
+  renderCalendar();
+}
+function calToday(){calCursor=midnight(new Date());renderCalendar();}
+function dayCellHTML(d,faded){
+  const o=offsetOf(d);const act=effAct(d);const A=ACTIVITIES[act];const rest=act==='REST'||!act;
+  const done=!rest&&!!planDone[ymd(d)];const fest=isFestival(d);const today=isToday(d);
+  const ic=o<0?'·':(fest?'🎪':(A?A.emoji:'·'));
+  const cls='daycell'+(rest?' rest':'')+(done?' done':'')+(fest?' fest':'')+(today?' today':'')+(faded?' faded':'');
+  return `<div class="${cls}" data-d="${ymd(d)}"><span class="dn">${d.getDate()}</span><span class="ico">${done?'✓':ic}</span></div>`;
+}
+function renderCalendar(){
+  const body=document.getElementById('calBody'),label=document.getElementById('calLabel');
+  if(calView==='month'){
+    const y=calCursor.getFullYear(),m=calCursor.getMonth();
+    label.textContent=MONTHS[m]+' '+y;
+    const first=new Date(y,m,1);const startIdx=(first.getDay()+6)%7; // Montag-Start
+    const gridStart=new Date(y,m,1-startIdx);
+    let html='<div class="calhead">'+['Mo','Di','Mi','Do','Fr','Sa','So'].map(x=>`<span>${x}</span>`).join('')+'</div><div class="calgrid">';
+    for(let i=0;i<42;i++){const d=new Date(gridStart.getTime()+i*DAY_MS);html+=dayCellHTML(d,d.getMonth()!==m);}
+    html+='</div>';
+    body.innerHTML=html;
+  } else {
+    const ws=midnight(calCursor);ws.setDate(ws.getDate()-ws.getDay()); // Sonntag der Woche
+    const we=new Date(ws.getTime()+6*DAY_MS);
+    label.textContent=fmtDate(ws)+' – '+fmtDate(we);
+    let html='<div class="calweek">';
+    for(let i=0;i<7;i++){
+      const d=new Date(ws.getTime()+i*DAY_MS);const before=offsetOf(d)<0;const act=effAct(d);const A=ACTIVITIES[act];
+      const rest=before||act==='REST'||!act;const done=!rest&&!!planDone[ymd(d)];const fest=isFestival(d);const today=isToday(d);
+      const chips=before?'':dayMenu(d).map(mm=>`<span>${mm.r.emoji||'🍽️'} ${esc(mm.r.title)}</span>`).join('');
+      html+=`<div class="wkrow${today?' today':''}${fest?' fest':''}" data-d="${ymd(d)}">
+        <div class="wkleft"><span class="wkdow">${DOW[d.getDay()]}</span><span class="wkdate">${fmtDate(d)}</span></div>
+        <div class="wkmain"><div class="wktrain">${before?'— vor dem Start':(done?'✓ ':'')+(fest?'🎪 ':'')+(A?A.emoji+' '+esc(A.name):'—')}</div><div class="wkmeals">${chips||'<span class="muted">—</span>'}</div></div>
+        <span class="rarw">›</span>
+      </div>`;
+    }
+    html+='</div>';
+    body.innerHTML=html;
+  }
+  body.querySelectorAll('[data-d]').forEach(c=>c.onclick=()=>openDay(c.dataset.d));
+  updateProg();
+}
 
 /* ---------- day detail (Training + Essen, bearbeitbar) ---------- */
-function getRecipe(id){return recipes.find(r=>r.id===id);}
-function dayMenu(w,i){
-  const m=effMeals(w,i);
-  return SLOTS.map(([key,label])=>({slot:label,key,r:getRecipe(m[key])})).filter(x=>x.r);
-}
-function openDay(w,i,edit){
-  const day=WEEK[i];
-  const act=effAct(w,i);const A=ACTIVITIES[act]||ACTIVITIES.REST;
+function openDay(ymdStr,edit){
+  const d=midnight(new Date(ymdStr+'T00:00:00'));
+  const before=offsetOf(d)<0;
+  const act=effAct(d);const A=ACTIVITIES[act]||ACTIVITIES.REST;
   const rest=act==='REST';
-  const key='w'+w+'-'+i;const done=!rest&&!!planDone[key];
-  const dt=dateOf(w,i);const fest=isFestival(w,i);
-  const dateStr=dt.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+  const key=ymd(d);const done=!rest&&!before&&!!planDone[key];
+  const fest=isFestival(d);
+  const dateStr=d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   let body;
-  if(edit){
+  if(before){
+    body='<div class="iblock"><p>Dieser Tag liegt vor dem Start (7. Juni 2026) – hier gibt es noch keinen Plan.</p></div>';
+  } else if(edit){
     const actOpts=Object.keys(ACTIVITIES).map(a=>`<option value="${a}"${a===act?' selected':''}>${esc(ACTIVITIES[a].name)}</option>`).join('');
-    const m=effMeals(w,i);
+    const m=effMeals(d);
     const mealSel=SLOTS.map(([k,label,cat])=>{
       const opts=['<option value="">— keins —</option>'].concat(recipes.filter(r=>r.cat===cat).map(r=>`<option value="${r.id}"${r.id===m[k]?' selected':''}>${esc(r.title)}</option>`)).join('');
       return `<label class="fld"><span>${label}</span><select class="inp" data-slot="${k}">${opts}</select></label>`;
@@ -752,7 +815,7 @@ function openDay(w,i,edit){
       <button class="btn danger" id="dayReset" style="width:100%;margin-top:10px">↺ Auf Plan-Standard zurücksetzen</button>`;
   } else {
     const exHtml=A.ex.map(e=>`<li>${esc(e)}</li>`).join('');
-    const menu=dayMenu(w,i);
+    const menu=dayMenu(d);
     const menuHtml=menu.length?menu.map(m=>`
       <button data-rid="${m.r.id}">
         <span class="rem">${m.r.emoji||'🍽️'}</span>
@@ -773,29 +836,29 @@ function openDay(w,i,edit){
   document.getElementById('panel').innerHTML=`
     <div class="phead">
       <span class="emoji">${fest?'🎪':A.emoji}</span>
-      <div><h2>Woche ${w} · ${day.d}</h2><div class="pcat">${dateStr}${fest?' · 🎪 Festival':(rest?' · Ruhetag':'')}</div></div>
+      <div><h2>${d.toLocaleDateString('de-DE',{weekday:'long'})}</h2><div class="pcat">${dateStr}${fest?' · 🎪 Festival':(rest&&!before?' · Ruhetag':'')}</div></div>
       <button class="close" id="x">✕</button>
     </div>
-    ${!edit?`<button class="btn ghost" id="dayEdit" style="width:100%;margin-bottom:4px">✎ Tag bearbeiten</button>`:''}
+    ${(!edit&&!before)?`<button class="btn ghost" id="dayEdit" style="width:100%;margin-bottom:4px">✎ Tag bearbeiten</button>`:''}
     ${body}
-    ${!edit?`<p style="color:var(--faint);font-size:.78rem;margin-top:14px">Essensvorschläge aus deinen Rezepten – tippe ein Gericht für Details. Ums Training: Banane vorher, Eiweißquelle danach.</p>`:''}`;
+    ${(!edit&&!before)?`<p style="color:var(--faint);font-size:.78rem;margin-top:14px">Essensvorschläge aus deinen Rezepten – tippe ein Gericht für Details. Ums Training: Banane vorher, Eiweißquelle danach.</p>`:''}`;
   document.getElementById('x').onclick=closeOverlay;
-  if(edit){
-    document.getElementById('dayCancel').onclick=()=>openDay(w,i,false);
+  if(edit&&!before){
+    document.getElementById('dayCancel').onclick=()=>openDay(key,false);
     document.getElementById('daySave').onclick=()=>{
-      const o=dayOverrides[key]||(dayOverrides[key]={});
-      o.act=document.getElementById('actSel').value;
-      o.meals=o.meals||{};
-      document.querySelectorAll('#panel select[data-slot]').forEach(s=>{o.meals[s.dataset.slot]=s.value;});
-      persistOverrides();renderTracker();openDay(w,i,false);toast('Tag gespeichert');
+      const ov=dayOverrides[key]||(dayOverrides[key]={});
+      ov.act=document.getElementById('actSel').value;
+      ov.meals=ov.meals||{};
+      document.querySelectorAll('#panel select[data-slot]').forEach(s=>{ov.meals[s.dataset.slot]=s.value;});
+      persistOverrides();renderCalendar();openDay(key,false);toast('Tag gespeichert');
     };
-    document.getElementById('dayReset').onclick=()=>{delete dayOverrides[key];persistOverrides();renderTracker();openDay(w,i,false);toast('Tag zurückgesetzt');};
-  } else {
-    document.getElementById('dayEdit').onclick=()=>openDay(w,i,true);
-    if(!rest)document.getElementById('dayToggle').onclick=()=>{
+    document.getElementById('dayReset').onclick=()=>{delete dayOverrides[key];persistOverrides();renderCalendar();openDay(key,false);toast('Tag zurückgesetzt');};
+  } else if(!before){
+    const eb=document.getElementById('dayEdit');if(eb)eb.onclick=()=>openDay(key,true);
+    if(!rest){const tb=document.getElementById('dayToggle');if(tb)tb.onclick=()=>{
       if(planDone[key])delete planDone[key];else planDone[key]=true;
-      persistPlan();renderTracker();openDay(w,i,false);
-    };
+      persistPlan();renderCalendar();openDay(key,false);
+    };}
     document.querySelectorAll('.rsugg button[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
   }
   openOverlay();
@@ -968,7 +1031,11 @@ document.getElementById('resetBtn').onclick=()=>{
   }
 };
 
-renderChips();renderGrid();renderTracker();
+document.getElementById('calPrev').onclick=()=>calStep(-1);
+document.getElementById('calNext').onclick=()=>calStep(1);
+document.getElementById('calToday').onclick=()=>calToday();
+document.querySelectorAll('#calViews button').forEach(b=>b.onclick=()=>setCalView(b.dataset.cv));
+renderChips();renderGrid();renderCalendar();
 </script>
 </body>
 </html>
