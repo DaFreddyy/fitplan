@@ -171,6 +171,16 @@
   .wkmeals .muted{background:transparent;border:none;padding-left:0}
   .wkrow .rarw{color:var(--faint);font-size:1.2rem;flex-shrink:0}
 
+  /* übungen */
+  .exli{cursor:pointer}
+  .exli .exgo{color:var(--coral);font-size:.72rem;font-weight:600;white-space:nowrap}
+  .exli:hover,.wbody li.exli:hover,.dlist li.exli:hover{color:var(--coral)}
+  .exfig{background:radial-gradient(120% 120% at 50% 28%,var(--surface-2),var(--bg-2));border:1px solid var(--line);border-radius:16px;margin:2px 0 12px;display:flex;justify-content:center}
+  .exfig svg{width:100%;max-width:280px;height:230px}
+  .exfig .limb{stroke:var(--ink);stroke-width:6;stroke-linecap:round}
+  .exfig .head{fill:var(--bg-2);stroke:var(--ink);stroke-width:5}
+  .exfig .ground{stroke:var(--line);stroke-width:3;stroke-dasharray:5 7}
+
   /* workout cards */
   .wcard{border:1px solid var(--line);background:var(--surface);border-radius:14px;margin-bottom:10px;overflow:hidden}
   .wcard summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:11px;font-weight:600;font-size:1rem}
@@ -853,7 +863,7 @@ function openDay(ymdStr,edit){
       </div>
       <button class="btn danger" id="dayReset" style="width:100%;margin-top:10px">↺ Auf Plan-Standard zurücksetzen</button>`;
   } else {
-    const exHtml=A.ex.map(e=>`<li>${esc(e)}</li>`).join('');
+    const exHtml=A.ex.map(e=>{const k=exKeyFor(e);return `<li${k?` class="exli" data-ex="${k}"`:''}>${esc(e)}${k?' <span class="exgo">▶ ansehen</span>':''}</li>`;}).join('');
     const menu=dayMenu(d);
     const menuHtml=menu.length?menu.map(m=>`
       <button data-rid="${m.r.id}">
@@ -899,6 +909,7 @@ function openDay(ymdStr,edit){
       persistPlan();renderCalendar();openDay(key,false);
     };}
     document.querySelectorAll('.rsugg button[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
+    document.querySelectorAll('#panel .exli').forEach(li=>li.onclick=()=>openExercise(li.dataset.ex,key));
   }
   openOverlay();
 }
@@ -1041,7 +1052,7 @@ function saveForm(id){
 
 /* ---------- overlay helpers ---------- */
 function openOverlay(){document.getElementById('overlay').classList.add('open');document.body.style.overflow='hidden';}
-function closeOverlay(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+function closeOverlay(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';if(typeof stopExAnim==='function')stopExAnim();if(typeof stopSpeak==='function')stopSpeak();}
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeOverlay();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverlay();});
 
@@ -1069,6 +1080,132 @@ document.getElementById('resetBtn').onclick=()=>{
     recipes=JSON.parse(JSON.stringify(DEFAULTS));detailServings={};persist();renderGrid();renderChips();toast('Zurückgesetzt');
   }
 };
+
+/* ---------- Übungs-Bibliothek: animierte Strichfigur + Text + Vorlesen ---------- */
+const EX_DEFAULT={ox:100,oy:112,torso:180,uarm:0,farm:0,thigh:0,shin:0};
+const EX_SEG={torso:42,head:11,uarm:24,farm:24,thigh:34,shin:34};
+function exDir(deg){const r=deg*Math.PI/180;return [Math.sin(r),Math.cos(r)];} // 0=runter,90=rechts,180=hoch
+function exJoints(p){
+  const ox=p.ox,oy=p.oy;
+  const t=exDir(p.torso), sh=[ox+t[0]*EX_SEG.torso, oy+t[1]*EX_SEG.torso];
+  const hd=[sh[0]+t[0]*(EX_SEG.head+3), sh[1]+t[1]*(EX_SEG.head+3)];
+  const u=exDir(p.uarm), el=[sh[0]+u[0]*EX_SEG.uarm, sh[1]+u[1]*EX_SEG.uarm];
+  const f=exDir(p.farm), ha=[el[0]+f[0]*EX_SEG.farm, el[1]+f[1]*EX_SEG.farm];
+  const th=exDir(p.thigh), kn=[ox+th[0]*EX_SEG.thigh, oy+th[1]*EX_SEG.thigh];
+  const s=exDir(p.shin), ft=[kn[0]+s[0]*EX_SEG.shin, kn[1]+s[1]*EX_SEG.shin];
+  return {hip:[ox,oy],sh,hd,el,ha,kn,ft};
+}
+function exLerp(a,b,t){const o={};['ox','oy','torso','uarm','farm','thigh','shin'].forEach(k=>{const av=(a[k]!==undefined?a[k]:EX_DEFAULT[k]),bv=(b[k]!==undefined?b[k]:EX_DEFAULT[k]);o[k]=av+(bv-av)*t;});return o;}
+const ANIM={
+ squat:{period:1900,a:{oy:104,torso:178,uarm:8,farm:8,thigh:2,shin:-2},b:{oy:128,torso:158,uarm:80,farm:88,thigh:42,shin:-16}},
+ lunge:{period:1900,a:{oy:104,torso:180,uarm:8,farm:8,thigh:4,shin:-4},b:{oy:120,torso:182,uarm:14,farm:14,thigh:38,shin:-36}},
+ calf:{period:1200,a:{oy:108,torso:180,uarm:6,farm:6,thigh:0,shin:0},b:{oy:96,torso:180,uarm:6,farm:6,thigh:0,shin:6}},
+ pushup:{period:1700,a:{ox:118,oy:148,torso:108,uarm:2,farm:2,thigh:-56,shin:-56},b:{ox:120,oy:152,torso:101,uarm:-34,farm:46,thigh:-54,shin:-54}},
+ plank:{period:3200,a:{ox:118,oy:150,torso:106,uarm:4,farm:84,thigh:-56,shin:-56},b:{ox:118,oy:148,torso:107,uarm:4,farm:84,thigh:-56,shin:-56}},
+ mountain:{period:900,a:{ox:118,oy:150,torso:108,uarm:2,farm:2,thigh:-56,shin:-56},b:{ox:118,oy:150,torso:108,uarm:2,farm:2,thigh:130,shin:78}},
+ pullup:{period:2000,a:{ox:100,oy:124,torso:180,uarm:176,farm:176,thigh:4,shin:6},b:{ox:100,oy:104,torso:180,uarm:168,farm:150,thigh:8,shin:12}},
+ bridge:{period:1900,a:{ox:114,oy:170,torso:-66,uarm:86,farm:86,thigh:120,shin:-12},b:{ox:118,oy:150,torso:-50,uarm:84,farm:84,thigh:96,shin:6}},
+ legraise:{period:1900,a:{ox:84,oy:156,torso:92,uarm:130,farm:150,thigh:-92,shin:-92},b:{ox:84,oy:156,torso:92,uarm:130,farm:150,thigh:-150,shin:-150}},
+ bicycle:{period:1100,a:{ox:86,oy:152,torso:92,uarm:140,farm:118,thigh:-72,shin:-30},b:{ox:86,oy:152,torso:92,uarm:118,farm:140,thigh:-112,shin:-150}},
+ superman:{period:2200,a:{ox:84,oy:166,torso:92,uarm:90,farm:90,thigh:-90,shin:-90},b:{ox:84,oy:162,torso:96,uarm:114,farm:114,thigh:-114,shin:-114}},
+ hollow:{period:2600,a:{ox:90,oy:150,torso:108,uarm:120,farm:120,thigh:-120,shin:-120},b:{ox:90,oy:152,torso:106,uarm:116,farm:116,thigh:-116,shin:-116}}
+};
+let _exRAF=null;
+function stopExAnim(){if(_exRAF){cancelAnimationFrame(_exRAF);_exRAF=null;}}
+function exSetLine(id,p1,p2){const e=document.getElementById(id);if(!e)return;e.setAttribute('x1',p1[0].toFixed(1));e.setAttribute('y1',p1[1].toFixed(1));e.setAttribute('x2',p2[0].toFixed(1));e.setAttribute('y2',p2[1].toFixed(1));}
+function exDraw(p){const J=exJoints(p);exSetLine('b_torso',J.hip,J.sh);exSetLine('b_uarm',J.sh,J.el);exSetLine('b_farm',J.el,J.ha);exSetLine('b_thigh',J.hip,J.kn);exSetLine('b_shin',J.kn,J.ft);const h=document.getElementById('b_head');if(h){h.setAttribute('cx',J.hd[0].toFixed(1));h.setAttribute('cy',J.hd[1].toFixed(1));}}
+function startExAnim(an){stopExAnim();const period=an.period||1700,start=performance.now();(function frame(now){const ph=((now-start)%period)/period;const t=(1-Math.cos(ph*2*Math.PI))/2;exDraw(exLerp(an.a,an.b,t));_exRAF=requestAnimationFrame(frame);})(performance.now());}
+function speak(text,onend){if(!('speechSynthesis'in window)){toast('Sprachausgabe wird hier nicht unterstützt');return false;}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=0.98;u.onend=()=>onend&&onend();window.speechSynthesis.speak(u);return true;}
+function stopSpeak(){if('speechSynthesis'in window)window.speechSynthesis.cancel();}
+const EXERCISES={
+  liegestuetze:{name:'Liegestütze',muscles:'Brust · Schultern · Trizeps',anim:'pushup',
+    steps:['Hände etwas weiter als schulterbreit aufsetzen, Körper bildet eine gerade Linie von Kopf bis Ferse.','Bauch und Po anspannen, Ellenbogen leicht nach hinten beugen und den Oberkörper kontrolliert senken.','Kurz bevor die Brust den Boden berührt stoppen und kraftvoll wieder nach oben drücken.'],
+    tips:['Po nicht durchhängen lassen – der Körper bleibt eine Linie.','Zu schwer? Knie ablegen. Zu leicht? Füße erhöht aufstellen.']},
+  kniebeugen:{name:'Kniebeugen',muscles:'Beine · Po',anim:'squat',
+    steps:['Füße schulterbreit aufstellen, Fußspitzen leicht nach außen.','Po nach hinten schieben und in die Hocke gehen, als würdest du dich auf einen Stuhl setzen.','Bis die Oberschenkel etwa parallel zum Boden sind, dann über die Fersen wieder hochdrücken.'],
+    tips:['Knie zeigen in Richtung der Fußspitzen und fallen nicht nach innen.','Rücken bleibt gerade, Brust aufrecht.']},
+  pike:{name:'Pike Push-ups',muscles:'Schultern',anim:'pushup',
+    steps:['Aus dem Liegestütz den Po nach oben schieben, der Körper bildet ein umgedrehtes V.','Den Kopf zwischen den Händen Richtung Boden senken, Ellenbogen beugen.','Kraftvoll über die Schultern wieder nach oben drücken.'],
+    tips:['Je senkrechter der Oberkörper, desto mehr arbeitet die Schulter.','Blick zwischen die Hände bzw. Füße richten.']},
+  ausfall:{name:'Ausfallschritte',muscles:'Beine · Po',anim:'lunge',
+    steps:['Aufrecht stehen und mit einem Bein einen großen Schritt nach vorn machen.','Das hintere Knie Richtung Boden senken, der vordere Oberschenkel wird etwa parallel.','Über die vordere Ferse zurück in den Stand drücken und die Seite wechseln.'],
+    tips:['Das vordere Knie bleibt über dem Fuß, nicht davor.','Oberkörper aufrecht halten.']},
+  dips:{name:'Dips an Stuhl-/Couchkante',muscles:'Trizeps · Brust',anim:'pushup',
+    steps:['Hände auf die Kante setzen, Finger nach vorn, Po direkt vor der Kante.','Die Ellenbogen nach hinten beugen und den Körper absenken.','Bis etwa 90 Grad im Ellenbogen, dann wieder nach oben drücken.'],
+    tips:['Ellenbogen bleiben nah am Körper und zeigen nach hinten.','Po dicht an der Kante führen.']},
+  plank:{name:'Plank (Unterarmstütz)',muscles:'Core · Rumpf',anim:'plank',
+    steps:['Die Unterarme direkt unter die Schultern legen, Beine nach hinten strecken.','Bauch und Po anspannen, der Körper bildet eine gerade Linie.','Die Position ruhig halten und gleichmäßig weiteratmen.'],
+    tips:['Hüfte weder durchhängen lassen noch nach oben schieben.','Blick zum Boden, der Nacken bleibt lang.']},
+  klimmzuege:{name:'Klimmzüge',muscles:'Rücken · Bizeps',anim:'pullup',
+    steps:['Die Stange etwas weiter als schulterbreit greifen.','Die Schulterblätter zusammenziehen und den Körper nach oben ziehen, bis das Kinn über der Stange ist.','Kontrolliert wieder ablassen, bis die Arme fast gestreckt sind.'],
+    tips:['Ohne Schwung arbeiten – sauber aus dem Rücken ziehen.','Kein Zugang? Mit Widerstandsband oder Körperrudern ersetzen.']},
+  rudern:{name:'Umgekehrtes Rudern',muscles:'Rücken',anim:'pullup',
+    steps:['Unter eine stabile Stange oder einen Tisch legen und die Kante greifen, Körper gerade.','Die Brust zur Stange ziehen und die Schulterblätter zusammenführen.','Kontrolliert wieder absenken.'],
+    tips:['Der Körper bleibt eine Linie, der Po ist angespannt.','Je waagerechter der Körper, desto schwerer.']},
+  bicycle:{name:'Bicycle Crunches',muscles:'Bauch · seitlicher Core',anim:'bicycle',
+    steps:['Auf den Rücken legen, Hände an die Schläfen, Beine angehoben.','Einen Ellenbogen und das gegenüberliegende Knie zueinander führen, das andere Bein strecken.','Im Wechsel weiter „radeln", die Schulterblätter bleiben oben.'],
+    tips:['Nicht am Kopf ziehen – die Hände stützen nur.','Die Bewegung kommt aus dem Bauch, nicht aus dem Schwung.']},
+  beinheben:{name:'Beinheben (liegend)',muscles:'unterer Bauch',anim:'legraise',
+    steps:['Auf den Rücken legen, Beine gestreckt, Hände neben dem Po.','Die gestreckten Beine bis etwa 90 Grad anheben.','Langsam wieder absenken, ohne die Fersen abzulegen.'],
+    tips:['Der untere Rücken bleibt am Boden.','Langsam absenken bringt den meisten Effekt.']},
+  sideplank:{name:'Side Plank',muscles:'seitlicher Core',anim:'plank',
+    steps:['Auf die Seite legen, der Unterarm ist direkt unter der Schulter.','Die Hüfte anheben, der Körper bildet eine gerade Linie.','Halten und anschließend die Seite wechseln.'],
+    tips:['Die Hüfte nicht absacken lassen.','Die Schulter bleibt über dem Ellenbogen.']},
+  superman:{name:'Superman',muscles:'unterer Rücken · Po',anim:'superman',
+    steps:['Auf den Bauch legen, die Arme nach vorn ausstrecken.','Arme, Brust und Beine gleichzeitig anheben.','Kurz oben halten und kontrolliert wieder absenken.'],
+    tips:['Den Nacken lang lassen, Blick zum Boden.','Bewusst Po und unteren Rücken anspannen.']},
+  splitsquat:{name:'Bulgarian Split Squats',muscles:'Beine · Po',anim:'squat',
+    steps:['Den hinteren Fuß erhöht auf einem Stuhl ablegen, das vordere Bein steht stabil.','Das vordere Knie beugen und den Körper gerade absenken.','Über die vordere Ferse wieder hochdrücken.'],
+    tips:['Das Gewicht liegt auf der vorderen Ferse.','Oberkörper leicht vorgeneigt, Rücken gerade.']},
+  glutebridge:{name:'Glute Bridges',muscles:'Po · hintere Kette',anim:'bridge',
+    steps:['Auf den Rücken legen, Füße hüftbreit aufstellen.','Den Po anspannen und die Hüfte nach oben drücken, bis der Körper eine Linie bildet.','Oben kurz halten, dann kontrolliert absenken.'],
+    tips:['Die Kraft kommt aus dem Po, nicht aus dem unteren Rücken.','Einbeinig ausgeführt ist es deutlich schwerer.']},
+  wadenheben:{name:'Wadenheben',muscles:'Waden',anim:'calf',
+    steps:['Aufrecht stehen, das Gewicht auf die Fußballen verlagern.','So hoch wie möglich auf die Zehenspitzen drücken.','Langsam und kontrolliert wieder absenken.'],
+    tips:['Oben kurz halten für mehr Reiz.','Auf einer Stufe ausgeführt = größere Bewegung.']},
+  mountainclimber:{name:'Mountain Climbers',muscles:'Core · Kondition',anim:'mountain',
+    steps:['In die Liegestützposition gehen, der Körper ist gerade.','Abwechselnd ein Knie zügig Richtung Brust ziehen.','Das Tempo halten, die Hüfte bleibt tief.'],
+    tips:['Den Po nicht nach oben schieben.','Schnell, aber kontrolliert bewegen.']},
+  planktopushup:{name:'Plank-to-Push-up',muscles:'Core · Schultern · Trizeps',anim:'pushup',
+    steps:['Im Unterarmstütz starten, der Körper ist gerade.','Arm für Arm nach oben in den Liegestütz drücken.','Wieder Arm für Arm in den Unterarmstütz zurück, dabei die Führungsseite wechseln.'],
+    tips:['Die Hüfte ruhig halten, nicht zur Seite rotieren.','Bauch und Po die ganze Zeit fest anspannen.']},
+  hollow:{name:'Hollow Hold',muscles:'tiefer Core',anim:'hollow',
+    steps:['Auf den Rücken legen und den unteren Rücken fest in den Boden drücken.','Arme nach hinten und die gestreckten Beine leicht anheben.','Der Körper bildet eine flache Schale – diese Spannung halten.'],
+    tips:['Bleibt der untere Rücken nicht am Boden, die Beine höher nehmen.','Ruhig und gleichmäßig weiteratmen.']}
+};
+function exKeyFor(t){t=(t||'').toLowerCase();const m=[['plank-to','planktopushup'],['side plank','sideplank'],['pike','pike'],['liegestütze','liegestuetze'],['dips','dips'],['kniebeug','kniebeugen'],['bulgarian','splitsquat'],['ausfallschritt','ausfall'],['klimmzug','klimmzuege'],['umgekehrtes rudern','rudern'],['bicycle','bicycle'],['beinheben','beinheben'],['superman','superman'],['glute','glutebridge'],['wadenheben','wadenheben'],['mountain','mountainclimber'],['hollow','hollow'],['plank','plank']];for(const it of m){if(t.includes(it[0]))return it[1];}return '';}
+function openExercise(key,back){
+  const ex=EXERCISES[key];if(!ex)return;
+  const an=ANIM[ex.anim]||ANIM.pushup;
+  const steps=ex.steps.map(s=>`<li>${esc(s)}</li>`).join('');
+  const tips=(ex.tips||[]).map(s=>`<li>${esc(s)}</li>`).join('');
+  document.getElementById('panel').innerHTML=`
+    <div class="phead">
+      <span class="emoji">🏋️</span>
+      <div><h2>${esc(ex.name)}</h2><div class="pcat">${esc(ex.muscles||'')}</div></div>
+      <button class="close" id="x">✕</button>
+    </div>
+    ${back?`<button class="btn ghost" id="exBack" style="width:100%;margin-bottom:8px">‹ Zurück zum Tag</button>`:''}
+    <div class="exfig"><svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+      <line class="ground" x1="6" y1="186" x2="194" y2="186"/>
+      <line id="b_thigh" class="limb"/><line id="b_shin" class="limb"/>
+      <line id="b_torso" class="limb"/><line id="b_uarm" class="limb"/><line id="b_farm" class="limb"/>
+      <circle id="b_head" class="head" r="11"/>
+    </svg></div>
+    <button class="btn" id="exSpeak" style="width:100%">🔊 Erklärung vorlesen</button>
+    <div class="sec-title">Ausführung</div>
+    <ol class="steps">${steps}</ol>
+    ${tips?`<div class="sec-title">Tipps</div><ul class="dlist">${tips}</ul>`:''}`;
+  document.getElementById('x').onclick=closeOverlay;
+  if(back){document.getElementById('exBack').onclick=()=>{stopExAnim();stopSpeak();openDay(back,false);};}
+  const btn=document.getElementById('exSpeak');let on=false;
+  const txt=ex.name+'. Ausführung: '+ex.steps.join(' ')+' '+(ex.tips&&ex.tips.length?('Tipps: '+ex.tips.join(' ')):'');
+  btn.onclick=()=>{ if(on){stopSpeak();on=false;btn.textContent='🔊 Erklärung vorlesen';} else { if(speak(txt,()=>{on=false;btn.textContent='🔊 Erklärung vorlesen';})){on=true;btn.textContent='⏹ Vorlesen stoppen';} } };
+  startExAnim(an);
+  openOverlay();
+}
+// Übungen in den Workout-Karten anklickbar machen
+document.querySelectorAll('#view-plan .wbody li').forEach(li=>{const k=exKeyFor(li.textContent);if(k){li.classList.add('exli');li.dataset.ex=k;li.insertAdjacentHTML('beforeend',' <span class="exgo">▶ ansehen</span>');li.onclick=()=>openExercise(k);}});
 
 document.getElementById('calPrev').onclick=()=>calStep(-1);
 document.getElementById('calNext').onclick=()=>calStep(1);

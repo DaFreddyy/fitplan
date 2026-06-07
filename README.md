@@ -40,6 +40,7 @@ Die Rezepte werden lokal im Browser (`localStorage`) gespeichert. Für den Wechs
 - **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack) aus dem **ersten Essensplan**
 - **Batch-Kochen / Reste**: Gerichte bleiben passend zu ihrer Portionszahl mehrere Tage im Plan (z. B. Linsen-Dal 3 Tage, Frittata 2 Tage) und werden als „♻ Reste" markiert
 - **Tag bearbeiten**: Training und jede Mahlzeit pro Tag frei wählbar; Änderungen lokal gespeichert, „Zurücksetzen" stellt den Plan-Standard wieder her
+- **Übung antippen** (im Tagesplan oder in den Workout-Karten) → **animierte Vormach-Figur**, Schritt-für-Schritt-Anleitung + Tipps und ein **🔊 Vorlesen-Button** (deutsche Browser-Sprachausgabe). Komplett offline, 18 Übungen
 - Fortschritts-Tracker über die 6 Plan-Wochen; Trainingstage abhaken, Balken zählt mit
 - Ernährung mit Makro-Zielen, Eiweißquellen, Beispieltag & Einkaufsliste; Festival-Tapering & Tipps zu Rauchstopp/Alkohol
 
