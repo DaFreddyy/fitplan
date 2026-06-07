@@ -141,8 +141,7 @@
   .daycell small{font-size:.6rem;letter-spacing:.03em}
   .daycell:hover{border-color:var(--coral);transform:translateY(-2px)}
   .daycell.done{background:var(--grad);border-color:transparent;color:#1a1024;font-weight:700}
-  .daycell.rest{cursor:default;opacity:.45}
-  .daycell.rest:hover{border-color:var(--line);transform:none}
+  .daycell.rest{opacity:.6}
   .wknote{font-size:.7rem;color:var(--tangerine);margin-top:2px;font-family:var(--body);font-weight:600}
 
   /* workout cards */
@@ -180,6 +179,24 @@
 
   .pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
   .pillrow span{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:.82rem;color:var(--muted)}
+
+  /* day detail */
+  .dlist{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .dlist li{display:flex;gap:11px;font-size:.94rem;line-height:1.4;padding:8px 0;border-bottom:1px dashed var(--line);align-items:flex-start}
+  .dlist li:last-child{border-bottom:none}
+  .dlist li::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--grad);margin-top:6px;flex-shrink:0}
+  .rsugg{display:flex;flex-direction:column;gap:8px}
+  .rsugg button{display:flex;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;color:var(--ink);font-family:var(--body);width:100%;transition:border-color .12s,transform .12s}
+  .rsugg button:hover{border-color:var(--coral);transform:translateY(-2px)}
+  .rsugg button .rem{font-size:1.7rem;flex-shrink:0;line-height:1}
+  .rsugg button .rinfo{flex:1;min-width:0}
+  .rsugg button .rcat{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tangerine);display:block}
+  .rsugg button .rinfo b{display:block;font-weight:600;font-size:.95rem;margin:1px 0}
+  .rsugg button .rinfo small{color:var(--faint);font-size:.78rem}
+  .rsugg button .rarw{color:var(--faint);font-size:1.2rem;flex-shrink:0}
+  .daytoggle{width:100%;margin-top:6px}
+  .daytoggle.on{background:transparent;color:#5fd28f;border:1px solid #2f5a40;box-shadow:none}
+  .daytoggle.on:hover{border-color:#5fd28f;transform:translateY(-2px)}
 
   /* overlay */
   .overlay{position:fixed;inset:0;z-index:50;background:rgba(10,6,18,.72);backdrop-filter:blur(6px);
@@ -299,7 +316,7 @@
         <div class="progbar"><i id="progBar"></i></div>
       </div>
       <div class="tracker" id="tracker"></div>
-      <div class="callout">Tippe auf einen Tag, um ihn als erledigt zu markieren – wird lokal auf diesem Gerät gespeichert. <strong>Ruhetage (So)</strong> zählen nicht zum Trainingsziel.</div>
+      <div class="callout">Tippe auf einen Tag, um <strong>Training &amp; Essensvorschläge</strong> zu sehen und ihn abzuhaken – wird lokal auf diesem Gerät gespeichert. Ruhetage (So) zählen nicht zum Trainingsziel.</div>
     </div>
 
     <!-- Wochenstruktur -->
@@ -566,10 +583,24 @@ document.getElementById('toRecipes').onclick=()=>switchView('recipes');
 /* ---------- plan tracker ---------- */
 const PLAN_KEY='parookaville_plan_v1';
 const WEEK=[
-  {d:'Mo',ico:'💪'},{d:'Di',ico:'🏃'},{d:'Mi',ico:'💪'},
-  {d:'Do',ico:'⚡'},{d:'Fr',ico:'💪'},{d:'Sa',ico:'🏃'},{d:'So',ico:'😴',rest:true}
+  {d:'Mo',ico:'💪',act:'A'},{d:'Di',ico:'🏃',act:'LAUF'},{d:'Mi',ico:'💪',act:'B'},
+  {d:'Do',ico:'⚡',act:'HIIT'},{d:'Fr',ico:'💪',act:'C'},{d:'Sa',ico:'🏃',act:'LAUF_SA'},{d:'So',ico:'😴',act:'REST',rest:true}
 ];
 const WEEK_NOTES={5:'schwerste Woche',6:'Tapering'};
+const DAYNAMES={Mo:'Montag',Di:'Dienstag',Mi:'Mittwoch',Do:'Donnerstag',Fr:'Freitag',Sa:'Samstag',So:'Sonntag'};
+const ACTIVITIES={
+  A:{emoji:'🔥',name:'Workout A – Push + Beine',rounds:'3 Runden · ~60–90 s Pause',ex:[
+    'Liegestütze – 10–15 Wdh (Knie ablegen wenn nötig)','Kniebeugen – 20 Wdh (mit Rucksack = härter)','Pike Push-ups – 8–12 Wdh','Ausfallschritte – 10 pro Bein','Dips an Stuhl-/Couchkante – 10–15 Wdh','Plank – 30–45 s']},
+  B:{emoji:'🎯',name:'Workout B – Pull + Core',rounds:'3 Runden',ex:[
+    'Klimmzüge – so viele wie geht (kein Zugang? Band-Rudern / Superman 15 Wdh)','Umgekehrtes Rudern – 10–12 Wdh','Bicycle Crunches – 20 (10 pro Seite)','Beinheben liegend – 12–15 Wdh','Side Plank – 30 s pro Seite','Superman-Halten – 3× 20 s']},
+  C:{emoji:'🦵',name:'Workout C – Beine + Core',rounds:'3 Runden',ex:[
+    'Bulgarian Split Squats – 10 pro Bein','Glute Bridges – 20 Wdh (einbeinig = härter)','Wadenheben – 25 Wdh','Mountain Climbers – 30 s','Plank-to-Push-up – 10 Wdh','Hollow Hold – 3× 20 s']},
+  HIIT:{emoji:'⚡',name:'HIIT / Intervalle',rounds:'~20–25 min inkl. Ein- & Auslaufen',ex:[
+    '5 min locker einlaufen','8–10× (30 s schnell / 60 s locker)','5 min auslaufen','Alternativ Burpees: 8 Runden je 20 s Vollgas / 40 s Pause']},
+  LAUF:{emoji:'🏃',name:'Lauf locker',rounds:'',ex:['30–40 min ruhig im Plaudertempo']},
+  LAUF_SA:{emoji:'🏃',name:'Lauf locker / aktive Erholung',rounds:'',ex:['40–50 min ruhig ODER langer Spaziergang + Mobility']},
+  REST:{emoji:'😴',name:'Ruhetag',rounds:'',ex:['Dehnen, locker spazieren, regenerieren','Schlaf priorisieren (7–9 h)']}
+};
 const TRAIN_PER_WEEK=WEEK.filter(d=>!d.rest).length;
 const TRAIN_TOTAL=TRAIN_PER_WEEK*6;
 let planDone=loadPlan();
@@ -581,24 +612,73 @@ function renderTracker(){
   for(let w=1;w<=6;w++){
     html+=`<tr><td class="wk">W${w}${WEEK_NOTES[w]?`<div class="wknote">${WEEK_NOTES[w]}</div>`:''}</td>`;
     WEEK.forEach((d,i)=>{
-      if(d.rest){html+=`<td><div class="daycell rest"><span class="ico">${d.ico}</span><small>frei</small></div></td>`;}
-      else{const k=`w${w}-${i}`;const on=!!planDone[k];html+=`<td><div class="daycell${on?' done':''}" data-k="${k}" title="Woche ${w} · ${d.d}"><span class="ico">${on?'✓':d.ico}</span><small>${d.d}</small></div></td>`;}
+      const k=d.rest?'':`w${w}-${i}`;
+      const on=k&&!!planDone[k];
+      const cls='daycell'+(d.rest?' rest':'')+(on?' done':'');
+      html+=`<td><div class="${cls}" data-w="${w}" data-i="${i}" title="Woche ${w} · ${d.d}"><span class="ico">${on?'✓':d.ico}</span><small>${d.rest?'frei':d.d}</small></div></td>`;
     });
     html+='</tr>';
   }
   html+='</tbody></table>';
   el.innerHTML=html;
-  el.querySelectorAll('.daycell[data-k]').forEach(c=>c.onclick=()=>{
-    const k=c.dataset.k;
-    if(planDone[k])delete planDone[k];else planDone[k]=true;
-    persistPlan();renderTracker();
-  });
+  el.querySelectorAll('.daycell[data-w]').forEach(c=>c.onclick=()=>openDay(+c.dataset.w,+c.dataset.i));
   updateProg();
 }
 function updateProg(){
   const done=Object.values(planDone).filter(Boolean).length;
   document.getElementById('progTxt').textContent=`${done} / ${TRAIN_TOTAL}`;
   document.getElementById('progBar').style.width=(done/TRAIN_TOTAL*100)+'%';
+}
+
+/* ---------- day detail (Training + Essen) ---------- */
+function dayMenu(week,di){
+  const seed=week*7+di;
+  const byCat=c=>recipes.filter(r=>r.cat===c);
+  const fr=byCat('Frühstück'),ha=byCat('Hauptgericht'),sn=byCat('Snack');
+  const at=(arr,o)=>arr.length?arr[((seed+o)%arr.length+arr.length)%arr.length]:null;
+  return [
+    {slot:'Frühstück',r:at(fr,0)},
+    {slot:'Mittag',r:at(ha,1)},
+    {slot:'Abend',r:at(ha,3)},
+    {slot:'Snack',r:at(sn,2)}
+  ].filter(x=>x.r);
+}
+function openDay(week,di){
+  const day=WEEK[di];
+  const act=ACTIVITIES[day.act];
+  const key=day.rest?'':`w${week}-${di}`;
+  const done=key&&!!planDone[key];
+  const exHtml=act.ex.map(e=>`<li>${esc(e)}</li>`).join('');
+  const menu=dayMenu(week,di);
+  const menuHtml=menu.map(m=>`
+    <button data-rid="${m.r.id}">
+      <span class="rem">${m.r.emoji||'🍽️'}</span>
+      <span class="rinfo"><span class="rcat">${m.slot}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
+      <span class="rarw">›</span>
+    </button>`).join('');
+  document.getElementById('panel').innerHTML=`
+    <div class="phead">
+      <span class="emoji">${act.emoji}</span>
+      <div><h2>Woche ${week} · ${DAYNAMES[day.d]}</h2><div class="pcat">${day.rest?'Ruhetag':'Trainingstag'}</div></div>
+      <button class="close" id="x">✕</button>
+    </div>
+    <div class="sec-title">Training</div>
+    <div class="iblock" style="margin-bottom:0">
+      <h4>${act.emoji} ${esc(act.name)}</h4>
+      ${act.rounds?`<div style="color:var(--tangerine);font-size:.8rem;font-weight:600;margin-bottom:9px">${esc(act.rounds)}</div>`:''}
+      <ul class="dlist">${exHtml}</ul>
+    </div>
+    ${key?`<button class="btn daytoggle${done?' on':''}" id="dayToggle">${done?'✓ Erledigt – tippen zum Zurücksetzen':'Als erledigt markieren'}</button>`:''}
+    <div class="sec-title">Essen für den Tag</div>
+    <div class="rsugg">${menuHtml}</div>
+    <p style="color:var(--faint);font-size:.78rem;margin-top:14px">Vorschlag aus deinen Rezepten – tippe ein Gericht für Zutaten &amp; Zubereitung. Ums Training: Banane vorher, Eiweißquelle danach.</p>`;
+  document.getElementById('x').onclick=closeOverlay;
+  if(key)document.getElementById('dayToggle').onclick=()=>{
+    if(planDone[key])delete planDone[key];else planDone[key]=true;
+    persistPlan();renderTracker();openDay(week,di);
+  };
+  document.querySelectorAll('.rsugg button[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
+  openOverlay();
 }
 
 /* ---------- rendering ---------- */
