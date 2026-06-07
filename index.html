@@ -142,6 +142,8 @@
   .daycell:hover{border-color:var(--coral);transform:translateY(-2px)}
   .daycell.done{background:var(--grad);border-color:transparent;color:#1a1024;font-weight:700}
   .daycell.rest{opacity:.6}
+  .daycell.fest{border-color:var(--tangerine);box-shadow:inset 0 0 0 1px var(--tangerine);opacity:1}
+  .daycell.fest.done{box-shadow:none}
   .wknote{font-size:.7rem;color:var(--tangerine);margin-top:2px;font-family:var(--body);font-weight:600}
 
   /* workout cards */
@@ -493,6 +495,14 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Wochen-Pläne als ausgelagerte Dateien (data/weekN.js) -->
+<script src="data/week1.js"></script>
+<script src="data/week2.js"></script>
+<script src="data/week3.js"></script>
+<script src="data/week4.js"></script>
+<script src="data/week5.js"></script>
+<script src="data/week6.js"></script>
+
 <script>
 const STORE_KEY='parookaville_recipes_v1';
 const CATS=['Frühstück','Hauptgericht','Snack'];
@@ -546,7 +556,55 @@ const DEFAULTS=[
   {id:'r12',emoji:'🫛',cat:'Snack',title:'Kichererbsensalat',servings:2,
    ings:[{a:400,u:'g',n:'Kichererbsen (1 Dose, abgetropft)'},{a:1,u:'Stück',n:'Tomate'},{a:100,u:'g',n:'Gurke'},{a:0.5,u:'Stück',n:'rote Zwiebel'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'Spritzer',n:'Zitrone'},{a:1,u:'Prise',n:'Petersilie'}],
    steps:['Kichererbsen abspülen, mit gewürfeltem Gemüse mischen.','Mit Öl, Zitrone, Salz und Petersilie anmachen.','10 min durchziehen lassen.'],
-   notes:'≈ 380 kcal / 16 g Eiweiß. Hält 2–3 Tage im Kühlschrank.'}
+   notes:'≈ 380 kcal / 16 g Eiweiß. Hält 2–3 Tage im Kühlschrank.'},
+  {id:'r13',emoji:'🍞',cat:'Frühstück',title:'Erdnussbutter-Bananen-Toast',servings:1,
+   ings:[{a:2,u:'Scheiben',n:'Vollkorntoast'},{a:20,u:'g',n:'Erdnussbutter'},{a:1,u:'Stück',n:'Banane'},{a:1,u:'Prise',n:'Zimt'}],
+   steps:['Toast rösten.','Mit Erdnussbutter bestreichen.','Bananenscheiben darauf verteilen, mit Zimt bestreuen.'],
+   notes:'≈ 380 kcal / 12 g Eiweiß. Schnell vor dem Lauf.'},
+  {id:'r14',emoji:'🥤',cat:'Frühstück',title:'Protein-Beeren-Smoothie',servings:1,
+   ings:[{a:250,u:'ml',n:'Sojamilch'},{a:100,u:'g',n:'TK-Beeren'},{a:1,u:'Stück',n:'Banane'},{a:30,u:'g',n:'Haferflocken'},{a:1,u:'EL',n:'Erdnussbutter (optional)'}],
+   steps:['Alle Zutaten in den Mixer geben.','Glatt mixen und sofort trinken.'],
+   notes:'≈ 400 kcal / 20 g Eiweiß. Mit 1 Scoop Proteinpulver ~35 g.'},
+  {id:'r15',emoji:'🍮',cat:'Frühstück',title:'Chia-Pudding mit Sojamilch',servings:1,
+   ings:[{a:30,u:'g',n:'Chiasamen'},{a:250,u:'ml',n:'Sojamilch'},{a:1,u:'TL',n:'Honig'},{a:100,u:'g',n:'Obst'}],
+   steps:['Chiasamen mit Sojamilch und Honig verrühren.','Über Nacht im Kühlschrank quellen lassen.','Morgens mit Obst toppen.'],
+   notes:'≈ 350 kcal / 14 g Eiweiß. Zwischendurch einmal umrühren.'},
+  {id:'r16',emoji:'🍝',cat:'Hauptgericht',title:'Vollkornnudeln mit Linsen-Bolognese',servings:2,
+   ings:[{a:160,u:'g',n:'Vollkornnudeln'},{a:150,u:'g',n:'rote oder braune Linsen'},{a:400,u:'g',n:'passierte Tomaten'},{a:1,u:'Stück',n:'Zwiebel'},{a:2,u:'Stück',n:'Knoblauchzehen'},{a:1,u:'Stück',n:'Karotte'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'TL',n:'Oregano'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Zwiebel, Knoblauch und Karotte fein hacken und im Öl anbraten.','Linsen, Tomaten und etwas Wasser zugeben, ~20 min köcheln.','Nudeln nach Packung kochen.','Mit Oregano und Salz abschmecken, über die Nudeln geben.'],
+   notes:'≈ 620 kcal / 28 g Eiweiß pro Portion.'},
+  {id:'r17',emoji:'🥙',cat:'Hauptgericht',title:'Falafel-Wrap mit Hummus',servings:2,
+   ings:[{a:2,u:'Stück',n:'Vollkorn-Wraps'},{a:8,u:'Stück',n:'Falafel (TK/fertig)'},{a:80,u:'g',n:'Hummus'},{a:100,u:'g',n:'Salat'},{a:1,u:'Stück',n:'Tomate'},{a:0.5,u:'Stück',n:'Gurke'}],
+   steps:['Falafel nach Packung erhitzen.','Wraps mit Hummus bestreichen.','Mit Salat, Tomate, Gurke und Falafel füllen und einrollen.'],
+   notes:'≈ 550 kcal / 20 g Eiweiß. Hummus liefert extra Eiweiß.'},
+  {id:'r18',emoji:'🐟',cat:'Hauptgericht',title:'Thunfisch-Reispfanne',servings:2,
+   ings:[{a:160,u:'g',n:'Reis (roh)'},{a:280,u:'g',n:'Thunfisch (2 Dosen, abgetropft)'},{a:300,u:'g',n:'TK-Erbsen-Mais-Mix'},{a:1,u:'Stück',n:'Zwiebel'},{a:2,u:'Stück',n:'Eier'},{a:1,u:'EL',n:'Sojasauce'},{a:1,u:'EL',n:'Öl'}],
+   steps:['Reis kochen.','Zwiebel und TK-Gemüse im Öl anbraten.','Reis und Thunfisch dazugeben.','Eier unterrühren und stocken lassen, mit Sojasauce abschmecken.'],
+   notes:'≈ 600 kcal / 38 g Eiweiß. Sehr eiweißreich und günstig.'},
+  {id:'r19',emoji:'🍠',cat:'Hauptgericht',title:'Süßkartoffel-Bohnen-Bowl',servings:2,
+   ings:[{a:500,u:'g',n:'Süßkartoffeln'},{a:400,u:'g',n:'Kidneybohnen (Dose, abgetropft)'},{a:1,u:'Stück',n:'Paprika'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'TL',n:'Paprikapulver'},{a:0.5,u:'Stück',n:'Avocado'},{a:1,u:'Spritzer',n:'Limette'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Süßkartoffeln würfeln, mit Öl, Paprikapulver und Salz mischen.','Bei 200 °C ca. 25 min backen.','Mit Bohnen, Paprika und Avocado anrichten, Limette darüber.'],
+   notes:'≈ 560 kcal / 18 g Eiweiß.'},
+  {id:'r20',emoji:'🥔',cat:'Hauptgericht',title:'Ofenkartoffeln mit Kräuterquark',servings:2,
+   ings:[{a:600,u:'g',n:'Kartoffeln'},{a:250,u:'g',n:'laktosefreier Quark'},{a:2,u:'EL',n:'Sojamilch'},{a:1,u:'Bund',n:'Schnittlauch/Kräuter'},{a:1,u:'EL',n:'Olivenöl'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Kartoffeln vierteln, mit Öl und Salz mischen, bei 200 °C ~30 min backen.','Quark mit Sojamilch und gehackten Kräutern verrühren.','Kartoffeln mit dem Kräuterquark servieren.'],
+   notes:'≈ 480 kcal / 26 g Eiweiß.'},
+  {id:'r21',emoji:'🍲',cat:'Hauptgericht',title:'Erbsen-Minz-Suppe mit Brot',servings:2,
+   ings:[{a:400,u:'g',n:'TK-Erbsen'},{a:1,u:'Stück',n:'Zwiebel'},{a:1,u:'Stück',n:'Kartoffel'},{a:600,u:'ml',n:'Gemüsebrühe'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'Handvoll',n:'frische Minze'},{a:120,u:'g',n:'Vollkornbrot'}],
+   steps:['Zwiebel und gewürfelte Kartoffel im Öl anbraten.','Brühe und Erbsen zugeben, ~12 min köcheln.','Mit Minze pürieren.','Mit Vollkornbrot servieren.'],
+   notes:'≈ 430 kcal / 18 g Eiweiß.'},
+  {id:'r22',emoji:'🍪',cat:'Snack',title:'Energy Balls (Datteln & Erdnuss)',servings:4,
+   ings:[{a:100,u:'g',n:'Datteln (entsteint)'},{a:80,u:'g',n:'Haferflocken'},{a:40,u:'g',n:'Erdnussbutter'},{a:20,u:'g',n:'Kakaonibs oder 1 EL Kakao'},{a:1,u:'EL',n:'Wasser'}],
+   steps:['Datteln fein zerkleinern.','Mit Haferflocken, Erdnussbutter und Kakao vermengen.','Bei Bedarf etwas Wasser zugeben, Kugeln formen und kühlen.'],
+   notes:'≈ 150 kcal / 5 g Eiweiß pro Portion. Hält 1 Woche im Kühlschrank.'},
+  {id:'r23',emoji:'🍎',cat:'Snack',title:'Apfel mit Erdnussbutter',servings:1,
+   ings:[{a:1,u:'Stück',n:'Apfel'},{a:20,u:'g',n:'Erdnussbutter'}],
+   steps:['Apfel in Spalten schneiden.','Mit Erdnussbutter genießen.'],
+   notes:'≈ 220 kcal / 6 g Eiweiß. Schneller Energie-Snack.'},
+  {id:'r24',emoji:'🍫',cat:'Snack',title:'Skyr mit Kakao & Nüssen',servings:1,
+   ings:[{a:200,u:'g',n:'laktosefreier Skyr'},{a:1,u:'TL',n:'Kakao'},{a:1,u:'TL',n:'Honig'},{a:15,u:'g',n:'Nüsse'}],
+   steps:['Skyr mit Kakao und Honig verrühren.','Mit Nüssen toppen.'],
+   notes:'≈ 230 kcal / 22 g Eiweiß. Perfekt abends.'}
 ];
 
 let recipes=load();
@@ -601,22 +659,49 @@ const ACTIVITIES={
   LAUF_SA:{emoji:'🏃',name:'Lauf locker / aktive Erholung',rounds:'',ex:['40–50 min ruhig ODER langer Spaziergang + Mobility']},
   REST:{emoji:'😴',name:'Ruhetag',rounds:'',ex:['Dehnen, locker spazieren, regenerieren','Schlaf priorisieren (7–9 h)']}
 };
-const TRAIN_PER_WEEK=WEEK.filter(d=>!d.rest).length;
-const TRAIN_TOTAL=TRAIN_PER_WEEK*6;
+const WEEKS=window.PFL_WEEKS||{};
+const NUM_WEEKS=6;
+// [key, Anzeige-Label, passende Rezept-Kategorie]
+const SLOTS=[['fr','Frühstück','Frühstück'],['mi','Mittag','Hauptgericht'],['ab','Abend','Hauptgericht'],['sn','Snack','Snack']];
+const START_MONDAY=new Date(2026,5,8); // Mo 8. Juni 2026 → 6 Wochen bis Festival 17.–19. Juli
+function dateOf(w,i){const d=new Date(START_MONDAY);d.setDate(d.getDate()+(w-1)*7+i);return d;}
+function fmtDate(d){return d.getDate()+'.'+(d.getMonth()+1)+'.';}
+function isFestival(w,i){return w===NUM_WEEKS&&i>=4;} // Fr/Sa/So der letzten Woche
+// pro-Tag-Overrides (vom Nutzer bearbeitet) liegen über den Wochen-Dateien
+const DOVR_KEY='parookaville_days_v1';
+let dayOverrides=loadOverrides();
+function loadOverrides(){try{const r=localStorage.getItem(DOVR_KEY);if(r){const d=JSON.parse(r);if(d&&typeof d==='object')return d;}}catch(e){}return {};}
+function persistOverrides(){try{localStorage.setItem(DOVR_KEY,JSON.stringify(dayOverrides));}catch(e){}}
+function baseDay(w,i){
+  let e=WEEKS[w]&&WEEKS[w].days&&WEEKS[w].days[i];
+  if(typeof e==='string')e={act:e};
+  if(!e||!e.act)e={act:(WEEK[i]&&WEEK[i].act)||'REST',meals:(e&&e.meals)||{}};
+  return {act:e.act,meals:e.meals||{}};
+}
+function effAct(w,i){const o=dayOverrides['w'+w+'-'+i]||{};return o.act||baseDay(w,i).act;}
+function autoPick(cat,w,i,off){const a=recipes.filter(r=>r.cat===cat);if(!a.length)return '';const s=(w-1)*7+i+off;return a[((s%a.length)+a.length)%a.length].id;}
+function effMeals(w,i){
+  const b=baseDay(w,i).meals;const o=(dayOverrides['w'+w+'-'+i]||{}).meals||{};
+  const g=(slot,cat,off)=>o[slot]!==undefined?o[slot]:(b[slot]!==undefined?b[slot]:autoPick(cat,w,i,off));
+  return {fr:g('fr','Frühstück',0),mi:g('mi','Hauptgericht',1),ab:g('ab','Hauptgericht',5),sn:g('sn','Snack',2)};
+}
 let planDone=loadPlan();
 function loadPlan(){try{const r=localStorage.getItem(PLAN_KEY);if(r){const d=JSON.parse(r);if(d&&typeof d==='object')return d;}}catch(e){}return {};}
 function persistPlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(planDone));}catch(e){}}
 function renderTracker(){
   const el=document.getElementById('tracker');
-  let html='<table class="tk"><thead><tr><th></th>'+WEEK.map(d=>`<th>${d.d}</th>`).join('')+'</tr></thead><tbody>';
-  for(let w=1;w<=6;w++){
-    html+=`<tr><td class="wk">W${w}${WEEK_NOTES[w]?`<div class="wknote">${WEEK_NOTES[w]}</div>`:''}</td>`;
-    WEEK.forEach((d,i)=>{
-      const k=d.rest?'':`w${w}-${i}`;
-      const on=k&&!!planDone[k];
-      const cls='daycell'+(d.rest?' rest':'')+(on?' done':'');
-      html+=`<td><div class="${cls}" data-w="${w}" data-i="${i}" title="Woche ${w} · ${d.d}"><span class="ico">${on?'✓':d.ico}</span><small>${d.rest?'frei':d.d}</small></div></td>`;
-    });
+  const dows=['Mo','Di','Mi','Do','Fr','Sa','So'];
+  let html='<table class="tk"><thead><tr><th></th>'+dows.map(d=>`<th>${d}</th>`).join('')+'</tr></thead><tbody>';
+  for(let w=1;w<=NUM_WEEKS;w++){
+    const note=(WEEKS[w]&&WEEKS[w].note)||WEEK_NOTES[w]||'';
+    html+=`<tr><td class="wk">W${w}${note?`<div class="wknote">${esc(note)}</div>`:''}</td>`;
+    for(let i=0;i<7;i++){
+      const act=effAct(w,i);const rest=act==='REST';const fest=isFestival(w,i);
+      const k='w'+w+'-'+i;const on=!rest&&!!planDone[k];
+      const ic=ACTIVITIES[act]?ACTIVITIES[act].emoji:'•';
+      const cls='daycell'+(rest?' rest':'')+(on?' done':'')+(fest?' fest':'');
+      html+=`<td><div class="${cls}" data-w="${w}" data-i="${i}" title="Woche ${w} · ${dateOf(w,i).toLocaleDateString('de-DE')}"><span class="ico">${on?'✓':(fest?'🎪':ic)}</span><small>${fmtDate(dateOf(w,i))}</small></div></td>`;
+    }
     html+='</tr>';
   }
   html+='</tbody></table>';
@@ -625,59 +710,91 @@ function renderTracker(){
   updateProg();
 }
 function updateProg(){
-  const done=Object.values(planDone).filter(Boolean).length;
-  document.getElementById('progTxt').textContent=`${done} / ${TRAIN_TOTAL}`;
-  document.getElementById('progBar').style.width=(done/TRAIN_TOTAL*100)+'%';
+  let total=0,done=0;
+  for(let w=1;w<=NUM_WEEKS;w++)for(let i=0;i<7;i++){if(effAct(w,i)!=='REST'){total++;if(planDone['w'+w+'-'+i])done++;}}
+  document.getElementById('progTxt').textContent=done+' / '+total;
+  document.getElementById('progBar').style.width=(total?done/total*100:0)+'%';
 }
 
-/* ---------- day detail (Training + Essen) ---------- */
-function dayMenu(week,di){
-  const seed=week*7+di;
-  const byCat=c=>recipes.filter(r=>r.cat===c);
-  const fr=byCat('Frühstück'),ha=byCat('Hauptgericht'),sn=byCat('Snack');
-  const at=(arr,o)=>arr.length?arr[((seed+o)%arr.length+arr.length)%arr.length]:null;
-  return [
-    {slot:'Frühstück',r:at(fr,0)},
-    {slot:'Mittag',r:at(ha,1)},
-    {slot:'Abend',r:at(ha,3)},
-    {slot:'Snack',r:at(sn,2)}
-  ].filter(x=>x.r);
+/* ---------- day detail (Training + Essen, bearbeitbar) ---------- */
+function getRecipe(id){return recipes.find(r=>r.id===id);}
+function dayMenu(w,i){
+  const m=effMeals(w,i);
+  return SLOTS.map(([key,label])=>({slot:label,key,r:getRecipe(m[key])})).filter(x=>x.r);
 }
-function openDay(week,di){
-  const day=WEEK[di];
-  const act=ACTIVITIES[day.act];
-  const key=day.rest?'':`w${week}-${di}`;
-  const done=key&&!!planDone[key];
-  const exHtml=act.ex.map(e=>`<li>${esc(e)}</li>`).join('');
-  const menu=dayMenu(week,di);
-  const menuHtml=menu.map(m=>`
-    <button data-rid="${m.r.id}">
-      <span class="rem">${m.r.emoji||'🍽️'}</span>
-      <span class="rinfo"><span class="rcat">${m.slot}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
-      <span class="rarw">›</span>
-    </button>`).join('');
+function openDay(w,i,edit){
+  const day=WEEK[i];
+  const act=effAct(w,i);const A=ACTIVITIES[act]||ACTIVITIES.REST;
+  const rest=act==='REST';
+  const key='w'+w+'-'+i;const done=!rest&&!!planDone[key];
+  const dt=dateOf(w,i);const fest=isFestival(w,i);
+  const dateStr=dt.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+  let body;
+  if(edit){
+    const actOpts=Object.keys(ACTIVITIES).map(a=>`<option value="${a}"${a===act?' selected':''}>${esc(ACTIVITIES[a].name)}</option>`).join('');
+    const m=effMeals(w,i);
+    const mealSel=SLOTS.map(([k,label,cat])=>{
+      const opts=['<option value="">— keins —</option>'].concat(recipes.filter(r=>r.cat===cat).map(r=>`<option value="${r.id}"${r.id===m[k]?' selected':''}>${esc(r.title)}</option>`)).join('');
+      return `<label class="fld"><span>${label}</span><select class="inp" data-slot="${k}">${opts}</select></label>`;
+    }).join('');
+    body=`
+      <div class="sec-title">Training</div>
+      <label class="fld"><span>Einheit</span><select class="inp" id="actSel">${actOpts}</select></label>
+      <div class="sec-title">Essen für den Tag</div>
+      ${mealSel}
+      <div class="actions">
+        <button class="btn" id="daySave">Speichern</button>
+        <button class="btn ghost" id="dayCancel">Abbrechen</button>
+      </div>
+      <button class="btn danger" id="dayReset" style="width:100%;margin-top:10px">↺ Auf Plan-Standard zurücksetzen</button>`;
+  } else {
+    const exHtml=A.ex.map(e=>`<li>${esc(e)}</li>`).join('');
+    const menu=dayMenu(w,i);
+    const menuHtml=menu.length?menu.map(m=>`
+      <button data-rid="${m.r.id}">
+        <span class="rem">${m.r.emoji||'🍽️'}</span>
+        <span class="rinfo"><span class="rcat">${m.slot}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
+        <span class="rarw">›</span>
+      </button>`).join(''):'<p style="color:var(--faint);font-size:.88rem">Keine Gerichte zugewiesen – über „✎ Tag bearbeiten" hinzufügen.</p>';
+    body=`
+      <div class="sec-title">Training</div>
+      <div class="iblock" style="margin-bottom:0">
+        <h4>${A.emoji} ${esc(A.name)}</h4>
+        ${A.rounds?`<div style="color:var(--tangerine);font-size:.8rem;font-weight:600;margin-bottom:9px">${esc(A.rounds)}</div>`:''}
+        <ul class="dlist">${exHtml}</ul>
+      </div>
+      ${!rest?`<button class="btn daytoggle${done?' on':''}" id="dayToggle">${done?'✓ Erledigt – tippen zum Zurücksetzen':'Als erledigt markieren'}</button>`:''}
+      <div class="sec-title">Essen für den Tag</div>
+      <div class="rsugg">${menuHtml}</div>`;
+  }
   document.getElementById('panel').innerHTML=`
     <div class="phead">
-      <span class="emoji">${act.emoji}</span>
-      <div><h2>Woche ${week} · ${DAYNAMES[day.d]}</h2><div class="pcat">${day.rest?'Ruhetag':'Trainingstag'}</div></div>
+      <span class="emoji">${fest?'🎪':A.emoji}</span>
+      <div><h2>Woche ${w} · ${day.d}</h2><div class="pcat">${dateStr}${fest?' · 🎪 Festival':(rest?' · Ruhetag':'')}</div></div>
       <button class="close" id="x">✕</button>
     </div>
-    <div class="sec-title">Training</div>
-    <div class="iblock" style="margin-bottom:0">
-      <h4>${act.emoji} ${esc(act.name)}</h4>
-      ${act.rounds?`<div style="color:var(--tangerine);font-size:.8rem;font-weight:600;margin-bottom:9px">${esc(act.rounds)}</div>`:''}
-      <ul class="dlist">${exHtml}</ul>
-    </div>
-    ${key?`<button class="btn daytoggle${done?' on':''}" id="dayToggle">${done?'✓ Erledigt – tippen zum Zurücksetzen':'Als erledigt markieren'}</button>`:''}
-    <div class="sec-title">Essen für den Tag</div>
-    <div class="rsugg">${menuHtml}</div>
-    <p style="color:var(--faint);font-size:.78rem;margin-top:14px">Vorschlag aus deinen Rezepten – tippe ein Gericht für Zutaten &amp; Zubereitung. Ums Training: Banane vorher, Eiweißquelle danach.</p>`;
+    ${!edit?`<button class="btn ghost" id="dayEdit" style="width:100%;margin-bottom:4px">✎ Tag bearbeiten</button>`:''}
+    ${body}
+    ${!edit?`<p style="color:var(--faint);font-size:.78rem;margin-top:14px">Essensvorschläge aus deinen Rezepten – tippe ein Gericht für Details. Ums Training: Banane vorher, Eiweißquelle danach.</p>`:''}`;
   document.getElementById('x').onclick=closeOverlay;
-  if(key)document.getElementById('dayToggle').onclick=()=>{
-    if(planDone[key])delete planDone[key];else planDone[key]=true;
-    persistPlan();renderTracker();openDay(week,di);
-  };
-  document.querySelectorAll('.rsugg button[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
+  if(edit){
+    document.getElementById('dayCancel').onclick=()=>openDay(w,i,false);
+    document.getElementById('daySave').onclick=()=>{
+      const o=dayOverrides[key]||(dayOverrides[key]={});
+      o.act=document.getElementById('actSel').value;
+      o.meals=o.meals||{};
+      document.querySelectorAll('#panel select[data-slot]').forEach(s=>{o.meals[s.dataset.slot]=s.value;});
+      persistOverrides();renderTracker();openDay(w,i,false);toast('Tag gespeichert');
+    };
+    document.getElementById('dayReset').onclick=()=>{delete dayOverrides[key];persistOverrides();renderTracker();openDay(w,i,false);toast('Tag zurückgesetzt');};
+  } else {
+    document.getElementById('dayEdit').onclick=()=>openDay(w,i,true);
+    if(!rest)document.getElementById('dayToggle').onclick=()=>{
+      if(planDone[key])delete planDone[key];else planDone[key]=true;
+      persistPlan();renderTracker();openDay(w,i,false);
+    };
+    document.querySelectorAll('.rsugg button[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
+  }
   openOverlay();
 }
 
@@ -843,7 +960,7 @@ document.getElementById('importFile').onchange=e=>{
   fr.readAsText(file);e.target.value='';
 };
 document.getElementById('resetBtn').onclick=()=>{
-  if(confirm('Auf die 12 Original-Rezepte zurücksetzen? Eigene Rezepte gehen verloren.')){
+  if(confirm('Auf die 24 Original-Rezepte zurücksetzen? Eigene Rezepte gehen verloren.')){
     recipes=JSON.parse(JSON.stringify(DEFAULTS));detailServings={};persist();renderGrid();renderChips();toast('Zurückgesetzt');
   }
 };
