@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#161021">
+<title>Festival Fuel – Rezepte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161021;
+    --bg-2:#1f1530;
+    --surface:#241a37;
+    --surface-2:#2d2143;
+    --line:#3a2c55;
+    --ink:#f4ecff;
+    --muted:#b3a3cf;
+    --faint:#7c6aa0;
+    --coral:#ff5e7a;
+    --tangerine:#ff9a3d;
+    --lime:#c8f45;
+    --grad:linear-gradient(100deg,#ff5e7a 0%,#ff9a3d 100%);
+    --radius:18px;
+    --shadow:0 18px 40px -18px rgba(0,0,0,.7);
+    --display:'Bricolage Grotesque',ui-sans-serif,system-ui,sans-serif;
+    --body:'Instrument Sans',ui-sans-serif,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--body);
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 600px at 85% -10%,rgba(255,154,61,.16),transparent 60%),
+      radial-gradient(900px 500px at -5% 0%,rgba(255,94,122,.18),transparent 55%),
+      radial-gradient(700px 700px at 50% 120%,rgba(200,255,69,.07),transparent 60%),
+      var(--bg);
+    min-height:100dvh;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:90px;
+  }
+  /* subtle grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:22px 18px 40px}
+
+  header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+  .logo{
+    width:46px;height:46px;border-radius:13px;background:var(--grad);
+    display:grid;place-items:center;font-size:24px;box-shadow:0 8px 22px -8px rgba(255,94,122,.7);
+    transform:rotate(-6deg);
+  }
+  .brand h1{font-family:var(--display);font-weight:800;font-size:1.5rem;line-height:1;letter-spacing:-.02em}
+  .brand p{color:var(--muted);font-size:.78rem;margin-top:3px}
+
+  .btn{
+    font-family:var(--body);font-weight:600;font-size:.92rem;border:none;cursor:pointer;
+    border-radius:12px;padding:11px 16px;color:#1a1024;background:var(--grad);
+    box-shadow:0 10px 22px -10px rgba(255,122,77,.8);transition:transform .12s ease,filter .12s ease;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn.ghost:hover{border-color:var(--coral)}
+  .btn.danger{background:transparent;color:var(--coral);border:1px solid #5a2740;box-shadow:none}
+
+  .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 14px}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{
+    width:100%;background:var(--surface);border:1px solid var(--line);color:var(--ink);
+    border-radius:13px;padding:12px 14px 12px 40px;font-family:var(--body);font-size:.95rem;outline:none;
+  }
+  .search input:focus{border-color:var(--coral)}
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.6}
+
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .chip{
+    border:1px solid var(--line);background:var(--surface);color:var(--muted);
+    border-radius:999px;padding:7px 15px;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .12s;
+  }
+  .chip:hover{color:var(--ink)}
+  .chip.active{background:var(--ink);color:#1a1024;border-color:var(--ink);font-weight:600}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .card{
+    background:linear-gradient(180deg,var(--surface) 0%,var(--bg-2) 100%);
+    border:1px solid var(--line);border-radius:var(--radius);padding:18px;cursor:pointer;
+    position:relative;overflow:hidden;transition:transform .15s ease,border-color .15s ease;
+    animation:rise .5s both;
+  }
+  .card:hover{transform:translateY(-4px);border-color:var(--coral)}
+  .card .emoji{font-size:34px;display:block;margin-bottom:10px}
+  .card .cat{
+    position:absolute;top:14px;right:14px;font-size:.68rem;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;padding:4px 9px;border-radius:999px;color:#1a1024;
+  }
+  .cat-fr{background:var(--lime)} .cat-ha{background:var(--tangerine)} .cat-sn{background:var(--coral);color:#fff}
+  .card h3{font-family:var(--display);font-weight:600;font-size:1.12rem;letter-spacing:-.01em;margin-bottom:8px;padding-right:30px}
+  .card .meta{color:var(--faint);font-size:.82rem;display:flex;gap:14px}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .empty .emoji{font-size:42px;display:block;margin-bottom:12px}
+
+  /* overlay */
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(10,6,18,.72);backdrop-filter:blur(6px);
+    display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 14px}
+  .overlay.open{display:flex}
+  .panel{
+    width:100%;max-width:620px;background:var(--bg-2);border:1px solid var(--line);
+    border-radius:22px;box-shadow:var(--shadow);padding:26px;animation:pop .25s both;margin:auto 0}
+  @keyframes pop{from{opacity:0;transform:scale(.97) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  .panel .phead{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+  .panel .phead .emoji{font-size:40px}
+  .panel h2{font-family:var(--display);font-weight:800;font-size:1.5rem;letter-spacing:-.02em;line-height:1.05;margin-right:auto}
+  .panel .pcat{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:4px}
+  .close{background:var(--surface);border:1px solid var(--line);color:var(--ink);width:38px;height:38px;
+    border-radius:10px;cursor:pointer;font-size:1.1rem;flex-shrink:0}
+  .close:hover{border-color:var(--coral)}
+
+  .servings{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:12px 16px;margin-bottom:20px}
+  .servings .lab{font-weight:600}.servings .lab small{display:block;color:var(--faint);font-weight:400;font-size:.78rem}
+  .stepper{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .stepper button{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);
+    color:var(--ink);font-size:1.2rem;cursor:pointer;line-height:1}
+  .stepper button:hover{border-color:var(--coral)}
+  .stepper .val{min-width:34px;text-align:center;font-weight:700;font-size:1.1rem;font-family:var(--display)}
+
+  .sec-title{font-family:var(--display);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--tangerine);margin:22px 0 10px}
+  ul.ings{list-style:none;display:flex;flex-direction:column;gap:2px}
+  ul.ings li{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:.96rem}
+  ul.ings li .amt{font-weight:700;color:var(--lime);min-width:88px;font-variant-numeric:tabular-nums}
+  ol.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+  ol.steps li{counter-increment:s;display:flex;gap:13px;font-size:.96rem;line-height:1.45}
+  ol.steps li::before{content:counter(s);background:var(--grad);color:#1a1024;font-weight:800;font-family:var(--display);
+    width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;font-size:.85rem}
+  .notes{background:var(--surface);border-left:3px solid var(--tangerine);border-radius:8px;padding:12px 14px;
+    color:var(--muted);font-size:.9rem;margin-top:18px;line-height:1.5}
+  .panel .actions{display:flex;gap:10px;margin-top:24px}
+  .panel .actions .btn{flex:1}
+
+  /* form */
+  label.fld{display:block;margin-bottom:14px}
+  label.fld span{display:block;font-size:.82rem;color:var(--muted);font-weight:500;margin-bottom:6px}
+  input,select,textarea{font-family:var(--body)}
+  .inp{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:11px;
+    padding:11px 13px;font-size:.95rem;outline:none}
+  .inp:focus{border-color:var(--coral)}
+  textarea.inp{resize:vertical;min-height:120px;line-height:1.5}
+  .row2{display:flex;gap:12px}.row2>*{flex:1}
+  .ingrow{display:flex;gap:8px;margin-bottom:8px}
+  .ingrow .amt{width:74px}.ingrow .unit{width:78px}.ingrow .nm{flex:1}
+  .ingrow .rm{width:38px;flex-shrink:0;background:var(--surface);border:1px solid var(--line);color:var(--coral);
+    border-radius:10px;cursor:pointer;font-size:1.1rem}
+  .addrow{background:transparent;border:1px dashed var(--line);color:var(--muted);border-radius:11px;
+    padding:9px;width:100%;cursor:pointer;font-size:.88rem;margin-top:2px}
+  .addrow:hover{border-color:var(--lime);color:var(--lime)}
+  .hint{font-size:.78rem;color:var(--faint);margin-top:-8px;margin-bottom:14px}
+
+  /* bottom bar */
+  .bottombar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(22,16,33,.9);
+    backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;
+    justify-content:center;align-items:center}
+  .bottombar .btn{padding:10px 14px;font-size:.85rem}
+  .bottombar small{color:var(--faint);font-size:.72rem;width:100%;text-align:center;margin-top:2px}
+  @media(max-width:560px){.bottombar .lbl{display:none}.bottombar .btn{padding:11px 13px}}
+  .toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);
+    color:#1a1024;font-weight:600;padding:11px 18px;border-radius:12px;font-size:.88rem;opacity:0;pointer-events:none;
+    transition:all .3s;z-index:60;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">🎪</div>
+      <div>
+        <h1>Festival Fuel</h1>
+        <p>Laktosefrei · fleischarm · günstig — fit für Parookaville</p>
+      </div>
+    </div>
+    <button class="btn" id="newBtn">+ Neues Rezept</button>
+  </header>
+
+  <div class="controls">
+    <div class="search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="searchInp" type="text" placeholder="Rezept oder Zutat suchen…">
+    </div>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- detail / form overlay -->
+<div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+
+<!-- bottom toolbar -->
+<div class="bottombar">
+  <button class="btn ghost" id="exportBtn">⬇ <span class="lbl">Export</span></button>
+  <button class="btn ghost" id="importBtn">⬆ <span class="lbl">Import</span></button>
+  <button class="btn ghost" id="resetBtn">↺ <span class="lbl">Zurücksetzen</span></button>
+  <input type="file" id="importFile" accept="application/json" hidden>
+  <small>Rezepte werden lokal auf diesem Gerät gespeichert. Für Handy ↔ PC: Export/Import nutzen.</small>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORE_KEY='parookaville_recipes_v1';
+const CATS=['Frühstück','Hauptgericht','Snack'];
+const CAT_CLASS={'Frühstück':'cat-fr','Hauptgericht':'cat-ha','Snack':'cat-sn'};
+
+const DEFAULTS=[
+  {id:'r01',emoji:'🥣',cat:'Frühstück',title:'Protein-Overnight-Oats',servings:1,
+   ings:[{a:60,u:'g',n:'Haferflocken'},{a:250,u:'ml',n:'Sojamilch'},{a:1,u:'Stück',n:'Banane'},{a:50,u:'g',n:'TK-Beeren'},{a:15,u:'g',n:'Erdnussbutter'},{a:1,u:'Prise',n:'Zimt'}],
+   steps:['Haferflocken, Sojamilch, Erdnussbutter und Zimt in ein Glas geben und verrühren.','Über Nacht in den Kühlschrank stellen.','Morgens zerdrückte Banane und Beeren unterrühren.'],
+   notes:'Mit 1 Scoop Soja-/Whey-Protein kommst du auf ~40 g Eiweiß. ≈ 480 kcal.'},
+  {id:'r02',emoji:'🥞',cat:'Frühstück',title:'Haferflocken-Protein-Pancakes',servings:1,
+   ings:[{a:50,u:'g',n:'Haferflocken'},{a:2,u:'Stück',n:'Eier'},{a:1,u:'Stück',n:'Banane'},{a:30,u:'ml',n:'Sojamilch'},{a:1,u:'Prise',n:'Backpulver'},{a:1,u:'TL',n:'Öl'}],
+   steps:['Haferflocken, Eier, Banane, Sojamilch und Backpulver glatt pürieren.','Öl in der Pfanne bei mittlerer Hitze erhitzen.','Kleine Pancakes ca. 2–3 min pro Seite goldbraun braten.','Mit Obst, laktosefreiem Quark oder Erdnussbutter toppen.'],
+   notes:'≈ 450 kcal / 22 g Eiweiß. Bei niedriger Hitze braten → bleiben fluffig.'},
+  {id:'r03',emoji:'🍳',cat:'Frühstück',title:'Rührei mit Gemüse & Vollkornbrot',servings:1,
+   ings:[{a:3,u:'Stück',n:'Eier'},{a:100,u:'g',n:'Gemüse (Spinat/Paprika/Tomate)'},{a:80,u:'g',n:'Vollkornbrot (ca. 2 Scheiben)'},{a:1,u:'TL',n:'Olivenöl'}],
+   steps:['Gemüse im Öl ca. 3 min anbraten.','Verquirlte Eier dazugeben und bei mittlerer Hitze stockend rühren.','Mit dem Brot servieren.'],
+   notes:'≈ 430 kcal / 26 g Eiweiß.'},
+  {id:'r04',emoji:'🍛',cat:'Hauptgericht',title:'Roter Linsen-Dal mit Reis',servings:3,
+   ings:[{a:200,u:'g',n:'rote Linsen'},{a:240,u:'g',n:'Reis (roh)'},{a:400,u:'g',n:'gehackte Tomaten (1 Dose)'},{a:400,u:'ml',n:'Wasser'},{a:1,u:'Stück',n:'Zwiebel'},{a:2,u:'Stück',n:'Knoblauchzehen'},{a:1,u:'EL',n:'Currypulver'},{a:1,u:'TL',n:'Kreuzkümmel'},{a:1,u:'EL',n:'Olivenöl'},{a:100,u:'g',n:'Blattspinat (optional)'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Reis nach Packungsanleitung in Salzwasser garen.','Zwiebel und Knoblauch fein hacken und im Öl glasig anbraten.','Currypulver und Kreuzkümmel dazugeben, 1 min mitrösten.','Linsen, Tomaten und Wasser zugeben, ~15 min cremig köcheln.','Optional Spinat unterrühren, mit Salz abschmecken, mit Reis servieren.'],
+   notes:'≈ 560 kcal / 24 g Eiweiß pro Portion. Hält 3 Tage, friert gut ein.'},
+  {id:'r05',emoji:'🍲',cat:'Hauptgericht',title:'Tofu-Gemüse-Pfanne mit Reis',servings:2,
+   ings:[{a:300,u:'g',n:'fester Tofu'},{a:160,u:'g',n:'Reis (roh)'},{a:400,u:'g',n:'TK-Gemüse-Mix'},{a:2,u:'EL',n:'Sojasauce'},{a:2,u:'TL',n:'Sesamöl'},{a:1,u:'EL',n:'Öl (zum Braten)'},{a:2,u:'Stück',n:'Knoblauchzehen'},{a:1,u:'TL',n:'Ingwer, gerieben (optional)'}],
+   steps:['Reis nach Packungsanleitung garen.','Tofu trockentupfen, würfeln und im Öl rundum knusprig braten.','TK-Gemüse, gehackten Knoblauch und Ingwer dazugeben und garen.','Mit Sojasauce und Sesamöl ablöschen, mit Reis servieren.'],
+   notes:'≈ 560 kcal / 30 g Eiweiß. Tofu gut trockentupfen für mehr Knusprigkeit.'},
+  {id:'r06',emoji:'🍜',cat:'Hauptgericht',title:'Kichererbsen-Curry mit Reis',servings:2,
+   ings:[{a:480,u:'g',n:'Kichererbsen (abgetropft, ~2 Dosen)'},{a:200,u:'ml',n:'Kokosmilch'},{a:160,u:'g',n:'Reis (roh)'},{a:1,u:'Stück',n:'Zwiebel'},{a:2,u:'Stück',n:'Knoblauchzehen'},{a:1,u:'EL',n:'Currypulver'},{a:100,u:'g',n:'Blattspinat'},{a:1,u:'EL',n:'Öl'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Reis nach Packungsanleitung garen.','Zwiebel und Knoblauch fein hacken und im Öl glasig anbraten.','Currypulver dazugeben, 1 min mitrösten.','Kichererbsen und Kokosmilch zugeben, ~10 min köcheln.','Spinat unterrühren, mit Salz abschmecken, mit Reis servieren.'],
+   notes:'≈ 600 kcal / 22 g Eiweiß. Ein Spritzer Zitrone am Ende hebt den Geschmack.'},
+  {id:'r07',emoji:'🐟',cat:'Hauptgericht',title:'Makrelen-Kartoffel-Bowl',servings:1,
+   ings:[{a:125,u:'g',n:'Makrele (Dose, abgetropft)'},{a:250,u:'g',n:'Kartoffeln'},{a:100,u:'g',n:'Salat/Gurke/Tomate'},{a:1,u:'TL',n:'Senf'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'Spritzer',n:'Zitrone'}],
+   steps:['Kartoffeln in Stücken ca. 20 min kochen.','Mit Makrele und Salat in einer Schale anrichten.','Dressing aus Senf, Öl und Zitrone darüber.'],
+   notes:'≈ 520 kcal / 32 g Eiweiß. Omega-3 + günstig. Thunfisch geht auch.'},
+  {id:'r08',emoji:'🌶️',cat:'Hauptgericht',title:'Bohnen-Chili mit Reis',servings:3,
+   ings:[{a:400,u:'g',n:'Kidneybohnen (abgetropft, 1 Dose)'},{a:400,u:'g',n:'schwarze Bohnen (abgetropft, 1 Dose)'},{a:150,u:'g',n:'Mais (abgetropft)'},{a:800,u:'g',n:'gehackte Tomaten (2 Dosen)'},{a:1,u:'Stück',n:'Zwiebel'},{a:1,u:'Stück',n:'Paprika'},{a:240,u:'g',n:'Reis (roh)'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'EL',n:'Paprikapulver'},{a:1,u:'TL',n:'Kreuzkümmel'},{a:0.5,u:'TL',n:'Chili'},{a:0.5,u:'TL',n:'Salz'}],
+   steps:['Reis nach Packungsanleitung garen.','Zwiebel und Paprika würfeln und im Öl ein paar Minuten anbraten.','Paprikapulver, Kreuzkümmel und Chili dazugeben, 1 min mitrösten.','Bohnen, Mais und Tomaten zugeben, ~25 min köcheln.','Mit Salz abschmecken, mit Reis servieren.'],
+   notes:'≈ 580 kcal / 24 g Eiweiß. Schmeckt am 2. Tag fast noch besser.'},
+  {id:'r09',emoji:'🥘',cat:'Hauptgericht',title:'Gemüse-Frittata',servings:2,
+   ings:[{a:5,u:'Stück',n:'Eier'},{a:250,u:'g',n:'Gemüse (TK oder Reste)'},{a:20,u:'g',n:'geriebener gereifter Käse'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'Prise',n:'Salz & Pfeffer'}],
+   steps:['Ofen auf 180 °C vorheizen. Eier verquirlen und salzen.','Gemüse in ofenfester Pfanne kurz anbraten, Eier darüber, Käse drauf.','Ca. 20 min backen, bis fest. In 2 Stücke teilen.'],
+   notes:'≈ 320 kcal / 22 g Eiweiß pro Portion. Gereifter Käse ist von Natur aus laktosearm.'},
+  {id:'r10',emoji:'🥗',cat:'Hauptgericht',title:'Edamame-Soja-Bowl',servings:1,
+   ings:[{a:150,u:'g',n:'Edamame (TK)'},{a:80,u:'g',n:'Reis (roh)'},{a:1,u:'Stück',n:'Karotte'},{a:100,u:'g',n:'Gurke'},{a:0.5,u:'Stück',n:'Avocado'},{a:1,u:'EL',n:'Sojasauce'},{a:1,u:'Spritzer',n:'Limette'}],
+   steps:['Edamame 4–5 min in Salzwasser kochen, abgießen.','Reis kochen.','Mit Karotte, Gurke und Avocado anrichten, Soja-Limetten-Dressing darüber.'],
+   notes:'≈ 530 kcal / 26 g Eiweiß.'},
+  {id:'r11',emoji:'🍓',cat:'Snack',title:'Laktosefreie Quark-Bowl',servings:1,
+   ings:[{a:250,u:'g',n:'laktosefreier Quark/Skyr'},{a:100,u:'g',n:'Obst'},{a:15,u:'g',n:'Nüsse'},{a:1,u:'TL',n:'Honig (optional)'}],
+   steps:['Quark mit Obst und Nüssen toppen, optional Honig darüber.'],
+   notes:'≈ 280 kcal / 28 g Eiweiß. Perfekt nach dem Training.'},
+  {id:'r12',emoji:'🫛',cat:'Snack',title:'Kichererbsensalat',servings:2,
+   ings:[{a:400,u:'g',n:'Kichererbsen (1 Dose, abgetropft)'},{a:1,u:'Stück',n:'Tomate'},{a:100,u:'g',n:'Gurke'},{a:0.5,u:'Stück',n:'rote Zwiebel'},{a:1,u:'EL',n:'Olivenöl'},{a:1,u:'Spritzer',n:'Zitrone'},{a:1,u:'Prise',n:'Petersilie'}],
+   steps:['Kichererbsen abspülen, mit gewürfeltem Gemüse mischen.','Mit Öl, Zitrone, Salz und Petersilie anmachen.','10 min durchziehen lassen.'],
+   notes:'≈ 380 kcal / 16 g Eiweiß. Hält 2–3 Tage im Kühlschrank.'}
+];
+
+let recipes=load();
+let activeCat='Alle';
+let search='';
+let detailServings={};
+
+function load(){
+  try{const r=localStorage.getItem(STORE_KEY);if(r){const d=JSON.parse(r);if(Array.isArray(d)&&d.length)return d;}}catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify(recipes));}catch(e){toast('Speichern hier nicht möglich – lade die Datei herunter.');}}
+function uid(){return (crypto.randomUUID?crypto.randomUUID():'r'+Date.now()+Math.random().toString(16).slice(2));}
+
+function fmt(n){
+  if(n===''||n===null||n===undefined||isNaN(n))return '';
+  let v=Number(n);
+  v=v>=10?Math.round(v):Math.round(v*10)/10;
+  return String(v).replace('.',',');
+}
+
+/* ---------- rendering ---------- */
+function renderChips(){
+  const el=document.getElementById('chips');
+  const all=['Alle',...CATS];
+  el.innerHTML=all.map(c=>`<button class="chip ${c===activeCat?'active':''}" data-c="${c}">${c}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{activeCat=b.dataset.c;renderChips();renderGrid();});
+}
+function renderGrid(){
+  const grid=document.getElementById('grid');
+  let list=recipes.filter(r=>activeCat==='Alle'||r.cat===activeCat);
+  if(search){const s=search.toLowerCase();list=list.filter(r=>r.title.toLowerCase().includes(s)||r.ings.some(i=>i.n.toLowerCase().includes(s)));}
+  if(!list.length){grid.innerHTML=`<div class="empty"><span class="emoji">🍽️</span>Keine Rezepte gefunden.<br>Füge mit „+ Neues Rezept" eins hinzu.</div>`;return;}
+  grid.innerHTML=list.map((r,i)=>`
+    <div class="card" style="animation-delay:${i*40}ms" data-id="${r.id}">
+      <span class="cat ${CAT_CLASS[r.cat]||''}">${r.cat}</span>
+      <span class="emoji">${r.emoji||'🍽️'}</span>
+      <h3>${esc(r.title)}</h3>
+      <div class="meta"><span>🍽 ${r.servings} Port.</span><span>📋 ${r.ings.length} Zutaten</span></div>
+    </div>`).join('');
+  grid.querySelectorAll('.card').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+}
+
+function openDetail(id){
+  const r=recipes.find(x=>x.id===id);if(!r)return;
+  detailServings[id]=detailServings[id]||r.servings;
+  drawDetail(r);
+  openOverlay();
+}
+function drawDetail(r){
+  const cur=detailServings[r.id];
+  const f=cur/r.servings;
+  const ings=r.ings.map(i=>{
+    const amt=(i.a===''||i.a===null||i.a===undefined)?'':`${fmt(i.a*f)} ${i.u||''}`.trim();
+    return `<li><span class="amt">${amt}</span><span>${esc(i.n)}</span></li>`;
+  }).join('');
+  const steps=r.steps.map(s=>`<li>${esc(s)}</li>`).join('');
+  document.getElementById('panel').innerHTML=`
+    <div class="phead">
+      <span class="emoji">${r.emoji||'🍽️'}</span>
+      <div><h2>${esc(r.title)}</h2><div class="pcat">${r.cat}</div></div>
+      <button class="close" id="x">✕</button>
+    </div>
+    <div class="servings">
+      <div class="lab">Portionen<small>Mengen passen sich an</small></div>
+      <div class="stepper">
+        <button id="minus">−</button><span class="val">${cur}</span><button id="plus">+</button>
+      </div>
+    </div>
+    <div class="sec-title">Zutaten</div>
+    <ul class="ings">${ings}</ul>
+    <div class="sec-title">Zubereitung</div>
+    <ol class="steps">${steps}</ol>
+    ${r.notes?`<div class="notes">💡 ${esc(r.notes)}</div>`:''}
+    <div class="actions">
+      <button class="btn ghost" id="edit">✎ Bearbeiten</button>
+      <button class="btn danger" id="del">🗑 Löschen</button>
+    </div>`;
+  document.getElementById('x').onclick=closeOverlay;
+  document.getElementById('minus').onclick=()=>{if(detailServings[r.id]>1){detailServings[r.id]--;drawDetail(r);}};
+  document.getElementById('plus').onclick=()=>{if(detailServings[r.id]<50){detailServings[r.id]++;drawDetail(r);}};
+  document.getElementById('edit').onclick=()=>openForm(r.id);
+  document.getElementById('del').onclick=()=>{
+    if(confirm(`„${r.title}" wirklich löschen?`)){recipes=recipes.filter(x=>x.id!==r.id);persist();closeOverlay();renderGrid();toast('Rezept gelöscht');}
+  };
+}
+
+/* ---------- form ---------- */
+function openForm(id){
+  const r=id?recipes.find(x=>x.id===id):null;
+  const ings=(r?r.ings:[{a:'',u:'g',n:''}]);
+  document.getElementById('panel').innerHTML=`
+    <div class="phead"><h2>${r?'Rezept bearbeiten':'Neues Rezept'}</h2><button class="close" id="x">✕</button></div>
+    <div class="row2">
+      <label class="fld"><span>Emoji</span><input class="inp" id="f_emoji" maxlength="4" value="${r?esc(r.emoji||''):'🍽️'}"></label>
+      <label class="fld" style="flex:3"><span>Titel</span><input class="inp" id="f_title" value="${r?esc(r.title):''}" placeholder="z. B. Linsensuppe"></label>
+    </div>
+    <div class="row2">
+      <label class="fld"><span>Kategorie</span><select class="inp" id="f_cat">${CATS.map(c=>`<option ${r&&r.cat===c?'selected':''}>${c}</option>`).join('')}</select></label>
+      <label class="fld"><span>Portionen</span><input class="inp" id="f_serv" type="number" min="1" max="50" value="${r?r.servings:2}"></label>
+    </div>
+    <div class="sec-title">Zutaten</div>
+    <div id="ingList">${ings.map(rowHTML).join('')}</div>
+    <button class="addrow" id="addIng">+ Zutat hinzufügen</button>
+    <div class="sec-title" style="margin-top:20px">Zubereitung</div>
+    <div class="hint">Eine Zeile = ein Schritt.</div>
+    <textarea class="inp" id="f_steps" placeholder="Gemüse anbraten…&#10;Eier dazugeben…">${r?esc(r.steps.join('\n')):''}</textarea>
+    <label class="fld" style="margin-top:14px"><span>Notiz (optional)</span><input class="inp" id="f_notes" value="${r?esc(r.notes||''):''}" placeholder="Tipp, Kalorien, …"></label>
+    <div class="actions">
+      <button class="btn" id="save">${r?'Speichern':'Hinzufügen'}</button>
+      <button class="btn ghost" id="cancel">Abbrechen</button>
+    </div>`;
+  document.getElementById('x').onclick=()=>{ r?openDetail(r.id):closeOverlay(); };
+  document.getElementById('cancel').onclick=()=>{ r?openDetail(r.id):closeOverlay(); };
+  document.getElementById('addIng').onclick=()=>{
+    const d=document.createElement('div');d.innerHTML=rowHTML({a:'',u:'g',n:''});
+    document.getElementById('ingList').appendChild(d.firstElementChild);bindRows();
+  };
+  bindRows();
+  document.getElementById('save').onclick=()=>saveForm(id);
+  openOverlay();
+}
+function rowHTML(i){
+  return `<div class="ingrow">
+    <input class="inp amt" type="text" inputmode="decimal" placeholder="200" value="${i.a===''||i.a==null?'':String(i.a).replace('.',',')}">
+    <input class="inp unit" type="text" placeholder="g" value="${esc(i.u||'')}">
+    <input class="inp nm" type="text" placeholder="Zutat" value="${esc(i.n||'')}">
+    <button class="rm" title="Entfernen">✕</button>
+  </div>`;
+}
+function bindRows(){
+  document.querySelectorAll('#ingList .rm').forEach(b=>b.onclick=()=>{
+    const rows=document.querySelectorAll('#ingList .ingrow');
+    if(rows.length>1)b.closest('.ingrow').remove();
+  });
+}
+function saveForm(id){
+  const title=document.getElementById('f_title').value.trim();
+  if(!title){toast('Bitte einen Titel eingeben');return;}
+  const ings=[...document.querySelectorAll('#ingList .ingrow')].map(row=>{
+    const a=row.querySelector('.amt').value.trim().replace(',','.');
+    return {a:a===''?'':Number(a),u:row.querySelector('.unit').value.trim(),n:row.querySelector('.nm').value.trim()};
+  }).filter(i=>i.n);
+  const steps=document.getElementById('f_steps').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const data={
+    emoji:document.getElementById('f_emoji').value.trim()||'🍽️',
+    title, cat:document.getElementById('f_cat').value,
+    servings:Math.max(1,parseInt(document.getElementById('f_serv').value)||1),
+    ings, steps, notes:document.getElementById('f_notes').value.trim()
+  };
+  if(id){const r=recipes.find(x=>x.id===id);Object.assign(r,data);detailServings[id]=r.servings;}
+  else{data.id=uid();recipes.unshift(data);}
+  persist();renderGrid();
+  toast(id?'Gespeichert':'Rezept hinzugefügt');
+  id?openDetail(id):openDetail(recipes[0].id);
+}
+
+/* ---------- overlay helpers ---------- */
+function openOverlay(){document.getElementById('overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeOverlay(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeOverlay();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverlay();});
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ---------- toolbar ---------- */
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+document.getElementById('newBtn').onclick=()=>openForm(null);
+document.getElementById('searchInp').oninput=e=>{search=e.target.value;renderGrid();};
+document.getElementById('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(recipes,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='parookaville-rezepte.json';a.click();URL.revokeObjectURL(a.href);
+  toast('Rezepte exportiert');
+};
+document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const fr=new FileReader();
+  fr.onload=()=>{try{const d=JSON.parse(fr.result);if(Array.isArray(d)){d.forEach(r=>{if(!r.id)r.id=uid();});recipes=d;persist();renderGrid();toast('Rezepte importiert');}else toast('Ungültige Datei');}catch(err){toast('Datei konnte nicht gelesen werden');}};
+  fr.readAsText(file);e.target.value='';
+};
+document.getElementById('resetBtn').onclick=()=>{
+  if(confirm('Auf die 12 Original-Rezepte zurücksetzen? Eigene Rezepte gehen verloren.')){
+    recipes=JSON.parse(JSON.stringify(DEFAULTS));detailServings={};persist();renderGrid();renderChips();toast('Zurückgesetzt');
+  }
+};
+
+renderChips();renderGrid();
+</script>
+</body>
+</html>

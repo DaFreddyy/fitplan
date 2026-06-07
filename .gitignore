@@ -1,0 +1,10 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Exportierte Rezepte (lokale Daten)
+parookaville-rezepte.json
+*.local.json
