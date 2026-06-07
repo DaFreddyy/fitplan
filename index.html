@@ -181,6 +181,32 @@
   .exfig .head{fill:var(--bg-2);stroke:var(--ink);stroke-width:5}
   .exfig .ground{stroke:var(--line);stroke-width:3;stroke-dasharray:5 7}
 
+  /* gericht tauschen */
+  .rsuggrow{display:flex;gap:8px}
+  .rsuggrow .rmain{flex:1;min-width:0}
+  .rsuggrow .rmain .rarw{color:var(--tangerine);font-size:.78rem;font-weight:600;white-space:nowrap}
+  .rsuggrow .rview{width:46px;flex-shrink:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--ink);cursor:pointer;font-size:1.05rem}
+  .rsuggrow .rview:hover{border-color:var(--coral)}
+  .swlist .swrow.cur{border-color:var(--tangerine)}
+  .swcur{font-size:.72rem;color:var(--tangerine);font-weight:600;white-space:nowrap}
+
+  /* einkaufs- & vorratsliste */
+  .shctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:.85rem;color:var(--muted)}
+  .shctrl .shday{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:9px;padding:6px 12px;cursor:pointer;font-weight:600;font-family:var(--body)}
+  .shctrl .shday.active{background:var(--grad);color:#1a1024;border-color:transparent}
+  .shctrl .shsum{margin-left:auto}
+  .shctrl .shsum b{color:var(--coral);font-family:var(--display)}
+  .shhead,.shrow{display:grid;grid-template-columns:1.5fr 64px 1fr 0.9fr;gap:8px;align-items:center}
+  .shhead{font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);font-weight:600;padding:0 2px 6px}
+  .shrow{padding:8px 2px;border-bottom:1px dashed var(--line);font-size:.85rem}
+  .shrow .shname{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+  .shrow .shname small{color:var(--faint);font-size:.7rem}
+  .shrow .shhave{padding:7px 6px;text-align:right;font-size:.85rem}
+  .shrow .shbuy{font-weight:600;color:#5fd28f;font-size:.8rem}
+  .shrow.need .shbuy{color:var(--coral)}
+  .shrow .shleer{color:var(--faint);font-size:.76rem}
+  .shrow.need .shleer{color:var(--tangerine)}
+
   /* workout cards */
   .wcard{border:1px solid var(--line);background:var(--surface);border-radius:14px;margin-bottom:10px;overflow:hidden}
   .wcard summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:11px;font-weight:600;font-size:1rem}
@@ -480,10 +506,16 @@
         <button class="btn ghost" id="toRecipes" style="margin-top:14px">🍽 Passende Rezepte ansehen →</button>
       </div>
       <div class="iblock">
-        <h4>🛒 Günstige Einkaufsliste (Basics)</h4>
-        <div class="pillrow">
-          <span>Haferflocken</span><span>Eier</span><span>TK-Gemüse</span><span>TK-Beeren</span><span>Dosenfisch</span><span>Linsen</span><span>Kichererbsen</span><span>Bohnen</span><span>Reis</span><span>Kartoffeln</span><span>Tofu</span><span>Sojamilch</span><span>laktosefreier Quark</span><span>Bananen</span><span>Erdnussbutter</span><span>saisonales Gemüse</span><span>Olivenöl</span>
+        <h4>🛒 Einkaufs- &amp; Vorratsliste</h4>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px">Automatisch aus deinem Essensplan berechnet. Trage ein, was du <strong>zuhause</strong> hast – die App zeigt, <strong>wie viel du kaufen</strong> musst und <strong>ab wann etwas leer geht</strong>.</p>
+        <div class="shctrl">
+          <span>Zeitraum:</span>
+          <button class="shday" data-d="7">7 Tage</button>
+          <button class="shday" data-d="14">14 Tage</button>
+          <button class="shday" id="shFilter">🛒 nur Einkauf</button>
+          <span class="shsum"><b id="shCount">0</b> zu kaufen</span>
         </div>
+        <div id="shopWrap"></div>
       </div>
       <div class="iblock">
         <h4>💧 Flüssigkeit &amp; Schlaf (unterschätzte Hebel)</h4>
@@ -866,11 +898,14 @@ function openDay(ymdStr,edit){
     const exHtml=A.ex.map(e=>{const k=exKeyFor(e);return `<li${k?` class="exli" data-ex="${k}"`:''}>${esc(e)}${k?' <span class="exgo">▶ ansehen</span>':''}</li>`;}).join('');
     const menu=dayMenu(d);
     const menuHtml=menu.length?menu.map(m=>`
-      <button data-rid="${m.r.id}">
-        <span class="rem">${m.r.emoji||'🍽️'}</span>
-        <span class="rinfo"><span class="rcat">${m.slot}${m.left?' · ♻ Reste':''}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
-        <span class="rarw">›</span>
-      </button>`).join(''):'<p style="color:var(--faint);font-size:.88rem">Keine Gerichte zugewiesen – über „✎ Tag bearbeiten" hinzufügen.</p>';
+      <div class="rsuggrow">
+        <button class="rmain" data-slot="${m.key}">
+          <span class="rem">${m.r.emoji||'🍽️'}</span>
+          <span class="rinfo"><span class="rcat">${m.slot}${m.left?' · ♻ Reste':''}</span><b>${esc(m.r.title)}</b><small>📋 ${m.r.ings.length} Zutaten · 🍽 ${m.r.servings} Port.</small></span>
+          <span class="rarw">↔ tauschen</span>
+        </button>
+        <button class="rview" data-rid="${m.r.id}" title="Rezept ansehen">🔍</button>
+      </div>`).join(''):'<p style="color:var(--faint);font-size:.88rem">Keine Gerichte zugewiesen – über „✎ Tag bearbeiten" hinzufügen.</p>';
     body=`
       <div class="sec-title">Training</div>
       <div class="iblock" style="margin-bottom:0">
@@ -899,16 +934,17 @@ function openDay(ymdStr,edit){
       ov.act=document.getElementById('actSel').value;
       ov.meals=ov.meals||{};
       document.querySelectorAll('#panel select[data-slot]').forEach(s=>{ov.meals[s.dataset.slot]=s.value;});
-      persistOverrides();renderCalendar();openDay(key,false);toast('Tag gespeichert');
+      persistOverrides();renderCalendar();renderShopping();openDay(key,false);toast('Tag gespeichert');
     };
-    document.getElementById('dayReset').onclick=()=>{delete dayOverrides[key];persistOverrides();renderCalendar();openDay(key,false);toast('Tag zurückgesetzt');};
+    document.getElementById('dayReset').onclick=()=>{delete dayOverrides[key];persistOverrides();renderCalendar();renderShopping();openDay(key,false);toast('Tag zurückgesetzt');};
   } else if(!before){
     const eb=document.getElementById('dayEdit');if(eb)eb.onclick=()=>openDay(key,true);
     if(!rest){const tb=document.getElementById('dayToggle');if(tb)tb.onclick=()=>{
       if(planDone[key])delete planDone[key];else planDone[key]=true;
       persistPlan();renderCalendar();openDay(key,false);
     };}
-    document.querySelectorAll('.rsugg button[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
+    document.querySelectorAll('#panel .rmain[data-slot]').forEach(b=>b.onclick=()=>openSwap(key,b.dataset.slot));
+    document.querySelectorAll('#panel .rview[data-rid]').forEach(b=>b.onclick=()=>openDetail(b.dataset.rid));
     document.querySelectorAll('#panel .exli').forEach(li=>li.onclick=()=>openExercise(li.dataset.ex,key));
   }
   openOverlay();
@@ -1081,6 +1117,86 @@ document.getElementById('resetBtn').onclick=()=>{
   }
 };
 
+/* ---------- Gericht tauschen (Tagesplanung) ---------- */
+function setMeal(dateStr,slot,id){const o=dayOverrides[dateStr]||(dayOverrides[dateStr]={});o.meals=o.meals||{};o.meals[slot]=id;persistOverrides();renderCalendar();renderShopping();}
+function openSwap(dateStr,slot){
+  const d=midnight(new Date(dateStr+'T00:00:00'));
+  const si=SLOTS.find(s=>s[0]===slot)||['','',''];const label=si[1],cat=si[2];
+  const cur=effMeals(d)[slot];
+  const rows=recipes.filter(r=>r.cat===cat).map(r=>`<button class="swrow${r.id===cur?' cur':''}" data-id="${r.id}">
+      <span class="rem">${r.emoji||'🍽️'}</span>
+      <span class="rinfo"><b>${esc(r.title)}</b><small>📋 ${r.ings.length} Zutaten · 🍽 ${r.servings} Port.</small></span>
+      ${r.id===cur?'<span class="swcur">✓ aktuell</span>':'<span class="rarw">›</span>'}
+    </button>`).join('');
+  document.getElementById('panel').innerHTML=`
+    <div class="phead">
+      <span class="emoji">🍽️</span>
+      <div><h2>${esc(label)} tauschen</h2><div class="pcat">${d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}</div></div>
+      <button class="close" id="x">✕</button>
+    </div>
+    <button class="btn ghost" id="swBack" style="width:100%;margin-bottom:8px">‹ Zurück zum Tag</button>
+    <div class="sec-title">Gericht wählen</div>
+    <div class="rsugg swlist">${rows}</div>
+    <button class="btn danger" id="swClear" style="width:100%;margin-top:10px">— Kein ${esc(label)}</button>`;
+  document.getElementById('x').onclick=closeOverlay;
+  document.getElementById('swBack').onclick=()=>openDay(dateStr,false);
+  document.getElementById('swClear').onclick=()=>{setMeal(dateStr,slot,'');toast(label+' entfernt');openDay(dateStr,false);};
+  document.querySelectorAll('#panel .swrow').forEach(b=>b.onclick=()=>{setMeal(dateStr,slot,b.dataset.id);toast('Gericht getauscht');openDay(dateStr,false);});
+  openOverlay();
+}
+
+/* ---------- Einkaufs- & Vorratsliste (aus dem Plan, mit Batch-Resten) ---------- */
+const PANTRY_KEY='parookaville_pantry_v1';
+const SHOP_IGNORE_UNITS=['Prise','Spritzer'];
+let pantry=loadJSON(PANTRY_KEY);
+let shopDays=7, shFilter=false;
+function persistPantry(){try{localStorage.setItem(PANTRY_KEY,JSON.stringify(pantry));}catch(e){}}
+function planNeeds(days){
+  const today=midnight(new Date());
+  const fridge={fr:null,mi:null,ab:null,sn:null};
+  const needs={};
+  for(let i=0;i<days;i++){
+    const d=new Date(today.getTime()+i*DAY_MS);const m=effMeals(d);
+    ['fr','mi','ab','sn'].forEach(slot=>{
+      const id=m[slot];if(!id)return;const r=getRecipe(id);if(!r)return;
+      const f=fridge[slot];
+      if(!f||f.id!==id||f.left<=0){ // neu kochen → Zutaten zählen
+        const serv=Math.max(1,r.servings||1);
+        r.ings.forEach(ing=>{
+          if(ing.a===''||ing.a==null||isNaN(Number(ing.a)))return;
+          if(SHOP_IGNORE_UNITS.indexOf(ing.u)>=0)return;
+          const key=ing.n.toLowerCase()+'|'+(ing.u||'');
+          if(!needs[key])needs[key]={name:ing.n,unit:ing.u||'',amount:0,cooks:[]};
+          needs[key].amount+=Number(ing.a);needs[key].cooks.push({date:d,amount:Number(ing.a)});
+        });
+        fridge[slot]={id,left:serv-1};
+      } else { f.left-=1; } // Reste essen → nichts kaufen
+    });
+  }
+  return needs;
+}
+function renderShopping(){
+  const wrap=document.getElementById('shopWrap');if(!wrap)return;
+  const needs=planNeeds(shopDays);
+  const keys=Object.keys(needs).sort((a,b)=>needs[a].name.localeCompare(needs[b].name,'de'));
+  let buy=0,rows='';
+  keys.forEach(k=>{
+    const n=needs[k];const have=Number(pantry[k]||0);const short=Math.max(0,n.amount-have);
+    let cum=0,leer=null;for(const c of n.cooks){cum+=c.amount;if(cum>have){leer=c.date;break;}}
+    if(short>0)buy++;
+    if(shFilter&&short<=0)return;
+    rows+=`<div class="shrow${short>0?' need':''}">
+      <div class="shname">${esc(n.name)}<small>Plan: ${fmt(n.amount)} ${esc(n.unit)}</small></div>
+      <input class="inp shhave" data-k="${esc(k)}" type="text" inputmode="decimal" placeholder="0" value="${have?String(have).replace('.',','):''}">
+      <div class="shbuy">${short>0?('🛒 '+fmt(short)+' '+esc(n.unit)):'✓ genug'}</div>
+      <div class="shleer">${short>0&&leer?('leer ab '+fmtDate(leer)):'reicht'}</div>
+    </div>`;
+  });
+  wrap.innerHTML=`<div class="shhead"><span>Zutat</span><span>habe</span><span>kaufen</span><span>leer ab</span></div>${rows||'<p style="color:var(--faint);font-size:.88rem">Keine Gerichte im Zeitraum.</p>'}`;
+  wrap.querySelectorAll('.shhave').forEach(inp=>inp.onchange=()=>{const v=inp.value.trim().replace(',','.');const k=inp.dataset.k;if(v===''||isNaN(Number(v)))delete pantry[k];else pantry[k]=Number(v);persistPantry();renderShopping();});
+  const c=document.getElementById('shCount');if(c)c.textContent=buy;
+}
+
 /* ---------- Übungs-Bibliothek: animierte Strichfigur + Text + Vorlesen ---------- */
 const EX_DEFAULT={ox:100,oy:112,torso:180,uarm:0,farm:0,thigh:0,shin:0};
 const EX_SEG={torso:42,head:11,uarm:24,farm:24,thigh:34,shin:34};
@@ -1211,7 +1327,10 @@ document.getElementById('calPrev').onclick=()=>calStep(-1);
 document.getElementById('calNext').onclick=()=>calStep(1);
 document.getElementById('calToday').onclick=()=>calToday();
 document.querySelectorAll('#calViews button').forEach(b=>b.onclick=()=>setCalView(b.dataset.cv));
-renderChips();renderGrid();renderCalendar();
+document.querySelectorAll('.shday').forEach(b=>b.onclick=()=>{shopDays=+b.dataset.d;document.querySelectorAll('.shday').forEach(x=>x.classList.toggle('active',x===b));renderShopping();});
+const shDef=document.querySelector('.shday[data-d="7"]');if(shDef)shDef.classList.add('active');
+const shf=document.getElementById('shFilter');if(shf)shf.onclick=()=>{shFilter=!shFilter;shf.classList.toggle('active',shFilter);renderShopping();};
+renderChips();renderGrid();renderCalendar();renderShopping();
 </script>
 </body>
 </html>
