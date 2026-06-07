@@ -40,7 +40,8 @@ Die Rezepte werden lokal im Browser (`localStorage`) gespeichert. Für den Wechs
 - **Tag antippen** → Training des Tages (Übungen) + Essensvorschläge (Frühstück/Mittag/Abend/Snack) aus dem **ersten Essensplan**
 - **Batch-Kochen / Reste**: Gerichte bleiben passend zu ihrer Portionszahl mehrere Tage im Plan (z. B. Linsen-Dal 3 Tage, Frittata 2 Tage) und werden als „♻ Reste" markiert
 - **Gericht tauschen**: in der Tagesplanung auf ein Gericht tippen → Liste aller Gerichte der Kategorie; eines auswählen tauscht es für den Tag (🔍 zeigt das Rezept)
-- **Einkaufs- & Vorratsliste** (aus dem Plan berechnet): eintragen, was du zuhause hast → die App zeigt **wie viel du kaufen** musst und **ab wann etwas leer geht**; Batch-Reste werden korrekt nur einmal gezählt. Zeitraum 7/14 Tage, Filter „nur Einkauf"
+- **Einkaufs- & Vorratsliste** (aus dem Plan berechnet): Menge eintragen, die du **zuhause** hast → die App zeigt **wie viel du kaufen** musst und **ab wann etwas leer geht** (auch über den Zeitraum hinaus). Gleiche Zutaten werden zusammengeführt, Batch-Reste nur einmal gezählt. Zeitraum 7/14 Tage, Filter „nur Einkauf"
+- **Warn-Meldung „Bald leer"**: listet Zutaten, die in ≤ 2 Tagen ausgehen – ist der übernächste Tag ein **Sonntag**, schon ab 3 Tagen, damit du rechtzeitig (vor dem geschlossenen Laden) einkaufst
 - **Tag bearbeiten**: Training und jede Mahlzeit pro Tag frei wählbar; Änderungen lokal gespeichert, „Zurücksetzen" stellt den Plan-Standard wieder her
 - **Übung antippen** (im Tagesplan oder in den Workout-Karten) → **animierte Vormach-Figur**, Schritt-für-Schritt-Anleitung + Tipps und ein **🔊 Vorlesen-Button** (deutsche Browser-Sprachausgabe). Komplett offline, 18 Übungen
 - Fortschritts-Tracker über die 6 Plan-Wochen; Trainingstage abhaken, Balken zählt mit
