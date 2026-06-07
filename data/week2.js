@@ -1,5 +1,6 @@
-/* Woche 2 – siehe week1.js für das Format. */
+/* Woche 2 – Reihenfolge So..Sa. Mahlzeiten ohne Angabe = automatische Vorschläge
+   (in der App pro Tag bearbeitbar). Format siehe week1.js. */
 (window.PFL_WEEKS = window.PFL_WEEKS || {})[2] = {
   note: 'Grundlage festigen',
-  days: ['A', 'LAUF', 'B', 'HIIT', 'C', 'LAUF_SA', 'REST']
+  days: ['REST', 'A', 'LAUF', 'B', 'HIIT', 'C', 'LAUF_SA']
 };

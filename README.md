@@ -2,7 +2,9 @@
 
 Persönlicher 6-Wochen-Plan + Rezept-App für die Festival-Vorbereitung — Kraft aufbauen, leicht definieren, gut essen. Ohne Gym, laktosefrei, fleischarm und günstig.
 
-**Start:** 6. Juni 2026 · **Ziel:** Parookaville 17.–19. Juli 2026
+**Start:** 7. Juni 2026 (heute) · **Ziel:** Parookaville 17.–19. Juli 2026
+
+Der Kalender beginnt heute (Sonntag) und läuft Woche für Woche bis zum Festival. Woche 1 ist bereits mit den Gerichten aus dem Beispieltag des Plans belegt; die weiteren Wochen schlagen Gerichte automatisch vor und sind pro Tag bearbeitbar.
 
 ## Inhalt
 
