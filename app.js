@@ -7,6 +7,8 @@ const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','S
 const SLOTS=[['fr','Frühstück'],['mi','Mittagessen'],['ab','Abendessen'],['sn','Snack']];
 const REST_SEC=45;
 const RMAP={};RECIPES.forEach(r=>RMAP[r.id]=r);
+function allRecipes(){return RECIPES.concat((S&&S.myRecipes)||[]);}
+function getRecipe(id){return RMAP[id]||((S&&S.myRecipes)||[]).find(r=>r.id===id);}
 const TPMAP={};TRAINING_PLANS.forEach(p=>TPMAP[p.id]=p);
 const MPMAP={};MEAL_PLANS.forEach(p=>MPMAP[p.id]=p);
 
@@ -28,7 +30,7 @@ function speak(text){try{if('speechSynthesis'in window){const u=new SpeechSynthe
 /* ---------- Auth + State (Supabase) ---------- */
 let sb=null, USER=null, S=null, saveTimer=null, syncState='—';
 function initSupabase(){try{if(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_KEY){sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}}catch(e){sb=null;}return sb;}
-function defaultProfile(){return {trainingPlanId:'ganzkoerper',mealPlanId:'ausgewogen',startDate:'2026-06-07',exclusions:[],mealOv:{},workoutOv:{},exOv:{},done:{},shopDays:7,shopChecked:{}};}
+function defaultProfile(){return {trainingPlanId:'ganzkoerper',mealPlanId:'ausgewogen',startDate:'2026-06-07',exclusions:[],mealOv:{},workoutOv:{},exOv:{},done:{},shopDays:7,shopChecked:{},myRecipes:[],cooked:{}};}
 function ukey(){return 'fitplan_u_'+(USER?USER.id:'anon');}
 function loadLocalState(){try{const r=localStorage.getItem(ukey());if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveLocalState(){try{localStorage.setItem(ukey(),JSON.stringify(S));}catch(e){}}
@@ -131,9 +133,9 @@ function excluded(r){
 }
 function poolFor(cat){
   const mp=MPMAP[S.mealPlanId]||MEAL_PLANS[0];
-  let pool=RECIPES.filter(r=>r.cat===cat&&mp.filter(r)&&!excluded(r));
-  if(!pool.length)pool=RECIPES.filter(r=>r.cat===cat&&!excluded(r));
-  if(!pool.length)pool=RECIPES.filter(r=>r.cat===cat);
+  let pool=allRecipes().filter(r=>r.cat===cat&&mp.filter(r)&&!excluded(r));
+  if(!pool.length)pool=allRecipes().filter(r=>r.cat===cat&&!excluded(r));
+  if(!pool.length)pool=allRecipes().filter(r=>r.cat===cat);
   return pool;
 }
 const MEAL_CATS={fr:'Frühstück',mi:'Mittagessen',ab:'Abendessen',sn:'Snack'};
@@ -229,7 +231,7 @@ function drawCal(){
     let h='<div class="weekrow">';
     for(let i=0;i<7;i++){const d=new Date(ws.getTime()+i*DAY_MS);const w=effWorkout(d);const m=effMeals(d);
       const done=!!S.done[ymd(d)]&&w.t!=='rest';
-      const chips=SLOTS.map(s=>{const r=RMAP[m[s[0]]];return r?`<span>${r.emoji} ${esc(r.title)}</span>`:'';}).join('');
+      const chips=SLOTS.map(s=>{const r=getRecipe(m[s[0]]);return r?`<span>${r.emoji} ${esc(r.title)}</span>`:'';}).join('');
       h+=`<div class="wkr${isToday(d)?' today':''}" onclick="openDay('${ymd(d)}')">
         <div class="l"><b>${DOW[d.getDay()]}</b><small>${fmtDate(d)}</small></div>
         <div class="m"><div class="wtitle">${done?'✓ ':''}${wIcon(w)} ${esc(w.name)}</div><div class="meals">${chips}</div></div>
@@ -248,8 +250,14 @@ function openDay(dStr){
   const done=!!S.done[dStr]&&w.t!=='rest';
   const exHtml=(w.items||[]).map(it=>{const ex=EXERCISES[it.ex];if(!ex)return '';
     return `<div class="exitem"><div class="x" onclick="openExercise('${it.ex}','day','${dStr}')"><b>${esc(ex.name)}</b><small>${metaOf(it)} · ${esc(ex.muscles)}</small></div></div>`;}).join('');
-  const meals=SLOTS.map(s=>{const r=RMAP[m[s[0]]];const lo=isLeftover(d,s[0]);if(!r)return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">➕</span><span class="info"><span class="rcat">${s[1]}</span><b>Gericht wählen</b></span><span class="go">›</span></button>`;
-    return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">${r.emoji}</span><span class="info"><span class="rcat">${s[1]}${lo?' · ♻ Meal Prep':''} · tauschen</span><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten</small></span><span class="go" onclick="event.stopPropagation();openRecipe('${r.id}')">🔍</span></button>`;}).join('');
+  const meals=SLOTS.map(s=>{const r=getRecipe(m[s[0]]);const lo=isLeftover(d,s[0]);
+    if(!r)return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">➕</span><span class="info"><span class="rcat">${s[1]}</span><b>Gericht wählen</b></span><span class="go">›</span></button>`;
+    const ck=!!(S.cooked&&S.cooked[dStr+'-'+s[0]]);
+    return `<div style="display:flex;gap:7px;margin-bottom:8px">
+      <button class="lrow" style="margin-bottom:0;flex:1;min-width:0" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">${r.emoji}</span><span class="info"><span class="rcat">${s[1]}${lo?' · ♻ Meal Prep':''} · tauschen</span><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten</small></span></button>
+      <button class="lrow" style="margin-bottom:0;flex:0 0 50px;justify-content:center;font-size:1.2rem" title="${ck?'gekocht ✓':'als gekocht markieren'}" onclick="toggleCooked('${dStr}','${s[0]}','${r.id}')">${ck?'✅':'🍳'}</button>
+      <button class="lrow" style="margin-bottom:0;flex:0 0 48px;justify-content:center" onclick="openRecipe('${r.id}')">🔍</button>
+    </div>`;}).join('');
   openOverlay(`
     <div class="phead"><span class="emoji">${wIcon(w)}</span><div><h2>${DOW[d.getDay()]}</h2><div class="pcat">${d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}</div></div><button class="close" onclick="closeOverlay()">✕</button></div>
     <div class="sec-title">Training · ${esc(w.name)}</div>
@@ -259,11 +267,13 @@ function openDay(dStr){
     <div class="sec-title">Essen</div>${meals}`);
 }
 function toggleDone(dStr){const turnOn=!S.done[dStr];if(turnOn){S.done[dStr]=true;recordActivity(effWorkout(parseYmd(dStr)).name,dStr);}else delete S.done[dStr];saveS();openDay(dStr);drawCal();}
+function toggleCooked(dStr,slot,rid){const ck=dStr+'-'+slot;S.cooked=S.cooked||{};const on=!S.cooked[ck];if(on){S.cooked[ck]=true;const r=getRecipe(rid);recordActivity(r?r.title:'Gericht',dStr,'meal');toast(MY&&MY.username?'Gekocht ✓ – im Feed gepostet':'Gekocht ✓');}else delete S.cooked[ck];saveS();openDay(dStr);}
+function cookNow(id){const r=getRecipe(id);if(!r)return;const t=ymd(todayMid());S.cooked=S.cooked||{};recordActivity(r.title,t,'meal');toast(MY&&MY.username?'Gekocht ✓ – im Feed gepostet':'Gekocht ✓');closeOverlay();}
 
 function openSwap(dStr,slot){
   const cat=MEAL_CATS[slot];const label=SLOTS.find(s=>s[0]===slot)[1];
   const cur=effMeals(parseYmd(dStr))[slot];
-  const rows=RECIPES.filter(r=>r.cat===cat).map(r=>`<button class="lrow ${r.id===cur?'cur':''}" onclick="setMeal('${dStr}','${slot}','${r.id}');toast('Getauscht');openDay('${dStr}')"><span class="em">${r.emoji}</span><span class="info"><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten · ${r.servings} Port.${excluded(r)?' · ⚠ ausgeschlossen':''}</small></span>${r.id===cur?'<span class="go">✓</span>':'<span class="go">›</span>'}</button>`).join('');
+  const rows=allRecipes().filter(r=>r.cat===cat).map(r=>`<button class="lrow ${r.id===cur?'cur':''}" onclick="setMeal('${dStr}','${slot}','${r.id}');toast('Getauscht');openDay('${dStr}')"><span class="em">${r.emoji}</span><span class="info"><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten · ${r.servings} Port.${excluded(r)?' · ⚠ ausgeschlossen':''}</small></span>${r.id===cur?'<span class="go">✓</span>':'<span class="go">›</span>'}</button>`).join('');
   openOverlay(`<div class="phead"><span class="emoji">🍽️</span><div><h2>${label} wählen</h2><div class="pcat">${parseYmd(dStr).toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}</div></div><button class="close" onclick="closeOverlay()">✕</button></div>
     <button class="btn ghost block" style="margin-bottom:10px" onclick="openDay('${dStr}')">‹ Zurück</button>${rows}`);
 }
@@ -299,16 +309,17 @@ function openExercise(exId,from,ctx){
 /* ---------- Rezept ---------- */
 let recDetailServ={};
 function openRecipe(id){
-  const r=RMAP[id];if(!r)return;const cur=recDetailServ[id]||r.servings;const f=cur/r.servings;
+  const r=getRecipe(id);if(!r)return;const cur=recDetailServ[id]||r.servings;const f=cur/r.servings;
   const ings=r.ings.map(i=>`<li><span class="amt">${i.a?fmtNum(i.a*f)+' '+i.u:''}</span><span>${esc(i.n)}</span></li>`).join('');
   const steps=r.steps.map(s=>`<li>${esc(s)}</li>`).join('');
   openOverlay(`<div class="phead"><span class="emoji">${r.emoji}</span><div><h2>${esc(r.title)}</h2><div class="pcat">${r.cat}</div></div><button class="close" onclick="closeOverlay()">✕</button></div>
     <div class="lrow" style="cursor:default"><span class="info"><b>Portionen</b><small>Mengen passen sich an</small></span><span style="display:flex;gap:6px;align-items:center"><button class="navbtn" onclick="recServ('${id}',-1)">−</button><b style="min-width:24px;text-align:center">${cur}</b><button class="navbtn" onclick="recServ('${id}',1)">+</button></span></div>
     <div class="sec-title">Zutaten</div><ul class="ings" style="list-style:none">${ings}</ul>
     <div class="sec-title">Zubereitung</div><ol class="steps">${steps}</ol>
-    ${r.notes?`<div class="notes">💡 ${esc(r.notes)}</div>`:''}`);
+    ${r.notes?`<div class="notes">💡 ${esc(r.notes)}</div>`:''}
+    <div class="actions"><button class="btn" onclick="cookNow('${id}')">🍳 Heute gekocht</button>${isOwn(id)?`<button class="btn ghost" onclick="openRecipeForm('${id}')">✎ Bearbeiten</button>`:''}</div>`);
 }
-function recServ(id,dir){const r=RMAP[id];const cur=recDetailServ[id]||r.servings;recDetailServ[id]=Math.max(1,Math.min(20,cur+dir));openRecipe(id);}
+function recServ(id,dir){const r=getRecipe(id);const cur=recDetailServ[id]||r.servings;recDetailServ[id]=Math.max(1,Math.min(20,cur+dir));openRecipe(id);}
 
 /* ===================== TRAINING ===================== */
 function renderTraining(){
@@ -415,10 +426,11 @@ function startTick(){
 let recFilter='Alle',recSearch='';
 function renderRecipes(){
   const v=$('v-recipes');const cats=['Alle','Frühstück','Mittagessen','Abendessen','Snack'];
-  let list=RECIPES.filter(r=>recFilter==='Alle'||r.cat===recFilter);
+  let list=allRecipes().filter(r=>recFilter==='Alle'||r.cat===recFilter);
   if(recSearch){const s=recSearch.toLowerCase();list=list.filter(r=>r.title.toLowerCase().includes(s)||r.ings.some(i=>i.n.toLowerCase().includes(s)));}
-  const cards=list.map(r=>`<div class="card rcard" onclick="openRecipe('${r.id}')"><span class="tag">${r.cat}</span><span class="emoji">${r.emoji}</span><h3>${esc(r.title)}</h3><div class="meta">🍽 ${r.servings} Port. · ${r.ings.length} Zutaten</div></div>`).join('');
+  const cards=list.map(r=>`<div class="card rcard" onclick="openRecipe('${r.id}')"><span class="tag">${r.cat}</span><span class="emoji">${r.emoji}</span><h3>${esc(r.title)}</h3><div class="meta">🍽 ${r.servings} Port. · ${r.ings.length} Zutaten${(r.id&&r.id[0]==='u')?(r.owner?' · ✏️ eigen':' · 🌐'):''}</div></div>`).join('');
   v.innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:4px"><button class="btn" style="flex:1" onclick="openRecipeForm(null)">＋ Eigenes Rezept</button><button class="btn ghost" onclick="openCommunity()">🌐 Community</button></div>
     <div class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="recSearch" placeholder="Rezept oder Zutat suchen…" value="${esc(recSearch)}"></div>
     <div class="chips">${cats.map(c=>`<button class="chip ${c===recFilter?'active':''}" onclick="setRecFilter('${c}')">${c}</button>`).join('')}</div>
     <div class="grid">${cards||'<div class="empty">Keine Rezepte gefunden.</div>'}</div>`;
@@ -448,7 +460,7 @@ function genShop(){
   for(let i=0;i<days;i++){const d=new Date(today.getTime()+i*DAY_MS);const m=effMeals(d);
     SLOTS.forEach(s=>{const id=m[s[0]];if(id)portions[id]=(portions[id]||0)+1;});}
   const agg={}; // name|unit -> {name,unit,amount,dept}
-  Object.keys(portions).forEach(id=>{const r=RMAP[id];if(!r)return;const cooks=Math.ceil(portions[id]/r.servings);
+  Object.keys(portions).forEach(id=>{const r=getRecipe(id);if(!r)return;const cooks=Math.ceil(portions[id]/r.servings);
     r.ings.forEach(ing=>{if(ing.a===''||ing.a==null||isNaN(Number(ing.a)))return;const nm=normIng(ing.n);const key=nm.toLowerCase()+'|'+(ing.u||'');
       if(!agg[key])agg[key]={name:nm,unit:ing.u||'',amount:0,dept:deptOf(ing.n)};agg[key].amount+=Number(ing.a)*cooks;});});
   const byDept={};Object.keys(agg).forEach(k=>{const a=agg[k];(byDept[a.dept]=byDept[a.dept]||[]).push(Object.assign({key:k},a));});
@@ -543,7 +555,7 @@ async function loadFeed(friendIds){
   return res;}
 async function toggleLike(aid,on){try{if(on)await sb.from('likes').insert({activity_id:aid,user_id:USER.id});else await sb.from('likes').delete().eq('activity_id',aid).eq('user_id',USER.id);}catch(e){}renderFriends();}
 async function addComment(aid){const inp=document.getElementById('cmt_'+aid);const t=(inp.value||'').trim();if(!t)return;try{await sb.from('comments').insert({activity_id:aid,user_id:USER.id,text:t});inp.value='';}catch(e){toast('Fehler');}renderFriends();}
-async function recordActivity(title,dayStr){if(!(sb&&USER&&USER.id!=='local'&&MY&&MY.username))return;try{await sb.from('activities').insert({user_id:USER.id,title:title,day:dayStr});}catch(e){}}
+async function recordActivity(title,dayStr,kind){if(!(sb&&USER&&USER.id!=='local'&&MY&&MY.username))return;try{await sb.from('activities').insert({user_id:USER.id,title:title,day:dayStr,kind:kind||'workout'});}catch(e){}}
 
 function av(name){return (name||'?').slice(0,1).toUpperCase();}
 function timeAgo(iso){const d=new Date(iso),s=(Date.now()-d.getTime())/1000;if(s<60)return 'gerade eben';if(s<3600)return Math.floor(s/60)+' min';if(s<86400)return Math.floor(s/3600)+' Std';return d.toLocaleDateString('de-DE',{day:'numeric',month:'short'});}
@@ -566,7 +578,7 @@ async function renderFriends(){
     const cmts=cs.map(c=>`<div class="cmt"><b>${esc(feed.names[c.user_id]||'?')}</b> ${esc(c.text)}</div>`).join('');
     return `<div class="feeditem">
       <div class="fh"><span class="fav">${av(nm)}</span><div><div class="fn">${esc(nm)}${a.user_id===USER.id?' <span class="faint">(du)</span>':''}</div><div class="ft">${timeAgo(a.created_at)}</div></div></div>
-      <div class="fbody">💪 Workout erledigt: <b>${esc(a.title)}</b></div>
+      <div class="fbody">${a.kind==='meal'?'🍽 Gekocht':'💪 Workout erledigt'}: <b>${esc(a.title)}</b></div>
       <div class="fact"><button class="${liked?'liked':''}" onclick="toggleLike('${a.id}',${liked?'false':'true'})">${liked?'❤️':'🤍'} ${lc>0?lc:''} Like</button><span class="faint" style="font-size:.82rem">${cs.length} Kommentar${cs.length===1?'':'e'}</span></div>
       ${cmts?`<div class="cmtlist">${cmts}</div>`:''}
       <div class="cmtbox"><input class="inp" id="cmt_${a.id}" placeholder="Kommentieren…"><button class="btn" onclick="addComment('${a.id}')">Senden</button></div>
@@ -580,6 +592,66 @@ async function renderFriends(){
     ${fr?`<div class="sec-title">Freunde <span class="secount">${f.accepted.length}</span></div>${fr}`:''}
     ${outg?`<div class="sec-title">Gesendet</div>${outg}`:''}
     <div class="sec-title">Aktivitäten</div>${feedHtml}`;}
+
+/* ===================== EIGENE & COMMUNITY-REZEPTE ===================== */
+let COMM=[];
+function isOwn(id){return !!(id&&id[0]==='u'&&(S.myRecipes||[]).some(r=>r.id===id));}
+function parseIng(line){line=(line||'').trim();if(!line)return null;
+  let m=line.match(/^(\d+(?:[.,]\d+)?)\s+([^\s\d][^\s]*)\s+(.+)$/);
+  if(m)return {a:parseFloat(m[1].replace(',','.')),u:m[2],n:m[3].trim()};
+  m=line.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
+  if(m)return {a:parseFloat(m[1].replace(',','.')),u:'',n:m[2].trim()};
+  return {a:'',u:'',n:line};}
+function openRecipeForm(id){
+  const r=id?getRecipe(id):null;const cats=['Frühstück','Mittagessen','Abendessen','Snack'];
+  const ingText=r?r.ings.map(i=>((i.a!==''&&i.a!=null)?fmtNum(i.a)+' '+(i.u?i.u+' ':''):'')+i.n).join('\n'):'';
+  openOverlay(`<div class="phead"><span class="emoji">📝</span><div><h2>${r?'Rezept bearbeiten':'Eigenes Rezept'}</h2></div><button class="close" onclick="closeOverlay()">✕</button></div>
+    <div style="display:flex;gap:8px"><label class="fld" style="flex:0 0 72px"><span>Emoji</span><input class="inp" id="rf_emoji" maxlength="3" value="${r?esc(r.emoji||'🍽️'):'🍽️'}"></label>
+    <label class="fld" style="flex:1"><span>Titel</span><input class="inp" id="rf_title" value="${r?esc(r.title):''}" placeholder="z. B. Linsensuppe"></label></div>
+    <div style="display:flex;gap:8px"><label class="fld" style="flex:1"><span>Kategorie</span><select class="inp" id="rf_cat">${cats.map(c=>`<option ${r&&r.cat===c?'selected':''}>${c}</option>`).join('')}</select></label>
+    <label class="fld" style="flex:0 0 92px"><span>Portionen</span><input class="inp" id="rf_serv" type="number" min="1" max="20" value="${r?r.servings:2}"></label></div>
+    <label class="fld"><span>Zutaten – eine pro Zeile (z. B. „200 g Linsen")</span><textarea class="inp" id="rf_ings" rows="5" placeholder="200 g Linsen&#10;1 Stück Zwiebel&#10;Salz">${esc(ingText)}</textarea></label>
+    <label class="fld"><span>Zubereitung – ein Schritt pro Zeile</span><textarea class="inp" id="rf_steps" rows="4">${r?esc(r.steps.join('\n')):''}</textarea></label>
+    <label class="fld"><span>Notiz (optional)</span><input class="inp" id="rf_notes" value="${r?esc(r.notes||''):''}"></label>
+    <label style="display:flex;align-items:center;gap:9px;margin:4px 0 12px;font-size:.9rem"><input type="checkbox" id="rf_share" ${r&&r.shared?'checked':''} style="width:20px;height:20px;flex-shrink:0;accent-color:#ff5e7a"><span>🌐 Mit der Community teilen – andere können es hinzufügen</span></label>
+    <div class="actions"><button class="btn" onclick="saveRecipeForm(${id?`'${id}'`:'null'})">Speichern</button>${id&&isOwn(id)?`<button class="btn danger" onclick="deleteMyRecipe('${id}')">Löschen</button>`:''}</div>`);
+}
+async function saveRecipeForm(id){
+  const title=$('rf_title').value.trim();if(!title){toast('Bitte Titel eingeben');return;}
+  const ings=$('rf_ings').value.split('\n').map(parseIng).filter(Boolean);
+  const steps=$('rf_steps').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  S.myRecipes=S.myRecipes||[];
+  const ex=id?S.myRecipes.find(x=>x.id===id):null;
+  const rec=ex?Object.assign({},ex):{id:'u'+uid(),owner:true};
+  rec.emoji=$('rf_emoji').value.trim()||'🍽️';rec.cat=$('rf_cat').value;rec.title=title;
+  rec.servings=Math.max(1,parseInt($('rf_serv').value)||1);rec.ings=ings;rec.steps=steps;rec.notes=$('rf_notes').value.trim();
+  rec.tags=rec.tags||['eigen'];const wantShare=$('rf_share').checked;
+  const idx=S.myRecipes.findIndex(x=>x.id===rec.id);if(idx>=0)S.myRecipes[idx]=rec;else S.myRecipes.push(rec);
+  if(wantShare){rec.shared=true;await shareRecipe(rec);}
+  else {if(ex&&ex.communityId)await unshareRecipe(rec);rec.shared=false;}
+  saveS();closeOverlay();renderRecipes();toast('Rezept gespeichert');
+}
+function deleteMyRecipe(id){if(!confirm('Rezept löschen?'))return;const r=(S.myRecipes||[]).find(x=>x.id===id);S.myRecipes=(S.myRecipes||[]).filter(x=>x.id!==id);if(r&&r.communityId)unshareRecipe(r);saveS();closeOverlay();renderRecipes();toast('Gelöscht');}
+async function shareRecipe(rec){if(!(sb&&USER&&USER.id!=='local')){toast('Teilen nur online möglich');return;}
+  const payload={user_id:USER.id,emoji:rec.emoji,cat:rec.cat,title:rec.title,servings:rec.servings,ings:rec.ings,steps:rec.steps,notes:rec.notes||'',shared:true};
+  if(rec.communityId)payload.id=rec.communityId;
+  try{const {data,error}=await sb.from('recipes').upsert(payload).select('id').maybeSingle();if(error){toast('Teilen-Fehler: '+error.message);return;}if(data&&data.id){rec.communityId=data.id;saveS();}toast('Geteilt 🌐');}catch(e){toast('Teilen-Fehler');}}
+async function unshareRecipe(rec){if(!(sb&&USER&&rec.communityId))return;try{await sb.from('recipes').delete().eq('id',rec.communityId);rec.communityId=null;saveS();}catch(e){}}
+async function openCommunity(){
+  if(!(sb&&USER&&USER.id!=='local')){toast('Community nur online verfügbar');return;}
+  openOverlay(`<div class="phead"><span class="emoji">🌐</span><div><h2>Community-Rezepte</h2><div class="pcat">von anderen geteilt</div></div><button class="close" onclick="closeOverlay()">✕</button></div><div class="empty">Lade…</div>`);
+  let rows=[];try{const {data}=await sb.from('recipes').select('*').eq('shared',true).order('created_at',{ascending:false}).limit(100);rows=data||[];}catch(e){}
+  COMM=rows;const uids=[...new Set(rows.map(r=>r.user_id))];const names={};
+  if(uids.length){try{const {data}=await sb.from('profiles').select('user_id,username').in('user_id',uids);(data||[]).forEach(p=>names[p.user_id]=p.username);}catch(e){}}
+  const have=new Set((S.myRecipes||[]).map(r=>r.communityId).filter(Boolean));
+  const list=rows.filter(r=>r.user_id!==USER.id).map(r=>`<div class="lrow" style="cursor:default"><span class="em">${r.emoji||'🍽️'}</span><span class="info"><span class="rcat">${esc(r.cat||'')} · @${esc(names[r.user_id]||'?')}</span><b>${esc(r.title)}</b><small>${(r.ings||[]).length} Zutaten · ${r.servings} Port.</small></span>${have.has(r.id)?'<span class="go" style="color:var(--green)">✓ dabei</span>':`<button class="btn" style="padding:8px 12px;flex-shrink:0" onclick="addCommunityRecipe('${r.id}')">+ Add</button>`}</div>`).join('');
+  $('panel').innerHTML=`<div class="phead"><span class="emoji">🌐</span><div><h2>Community-Rezepte</h2><div class="pcat">${rows.length} geteilt</div></div><button class="close" onclick="closeOverlay()">✕</button></div>${list||'<div class="empty">Noch keine geteilten Rezepte. Teile selbst eins über „＋ Eigenes Rezept" → „Mit der Community teilen".</div>'}`;
+}
+function addCommunityRecipe(cid){const r=COMM.find(x=>x.id===cid);if(!r)return;
+  if((S.myRecipes||[]).some(x=>x.communityId===cid)){toast('Schon hinzugefügt');return;}
+  S.myRecipes=S.myRecipes||[];
+  S.myRecipes.push({id:'u'+uid(),emoji:r.emoji||'🍽️',cat:r.cat,title:r.title,servings:r.servings||2,ings:r.ings||[],steps:r.steps||[],notes:r.notes||'',tags:['community'],owner:false,shared:false,communityId:cid});
+  saveS();toast('Hinzugefügt: '+r.title);openCommunity();}
 
 /* ===================== BOOT ===================== */
 boot();
