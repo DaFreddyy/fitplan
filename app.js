@@ -83,7 +83,7 @@ async function authSetNew(){if(!sb)return;const password=auPass();if(password.le
   toast('Passwort aktualisiert');showApp();
 }
 async function authLogout(){if(sb){try{await sb.auth.signOut();}catch(e){}}USER=null;showAuth();}
-async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();showApp();}else{USER=null;showAuth();}}
+async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();saveS();showApp();}else{USER=null;showAuth();}}
 async function boot(){
   document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
   initSupabase();
