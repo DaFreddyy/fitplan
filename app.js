@@ -26,19 +26,34 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');cle
 function speak(text){try{if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=1;speechSynthesis.cancel();speechSynthesis.speak(u);}}catch(e){}}
 
 /* ---------- Auth + State (Supabase) ---------- */
-let sb=null, USER=null, S=null, saveTimer=null;
+let sb=null, USER=null, S=null, saveTimer=null, syncState='—';
 function initSupabase(){try{if(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_KEY){sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}}catch(e){sb=null;}return sb;}
 function defaultProfile(){return {trainingPlanId:'ganzkoerper',mealPlanId:'ausgewogen',startDate:'2026-06-07',exclusions:[],mealOv:{},workoutOv:{},exOv:{},done:{},shopDays:7,shopChecked:{}};}
 function ukey(){return 'fitplan_u_'+(USER?USER.id:'anon');}
 function loadLocalState(){try{const r=localStorage.getItem(ukey());if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveLocalState(){try{localStorage.setItem(ukey(),JSON.stringify(S));}catch(e){}}
 async function loadState(){
-  let remote=null;
-  if(sb&&USER){try{const {data,error}=await sb.from('user_state').select('data').eq('user_id',USER.id).maybeSingle();if(!error&&data&&data.data)remote=data.data;}catch(e){}}
-  S=Object.assign(defaultProfile(), loadLocalState()||{}, remote||{});
+  let remote=null, hasRemote=false;
+  if(sb&&USER&&USER.id!=='local'){try{const {data,error}=await sb.from('user_state').select('data').eq('user_id',USER.id).maybeSingle();if(error){syncState='Lese-Fehler: '+error.message;}else if(data&&data.data){remote=data.data;hasRemote=true;}}catch(e){syncState='Lese-Fehler: '+(e&&e.message||e);}}
+  const local=loadLocalState();
+  if(hasRemote){S=Object.assign(defaultProfile(),remote);syncState='aus Cloud geladen';}
+  else if(local){S=Object.assign(defaultProfile(),local);cloudPush();} // erste Cloud-Speicherung der lokalen Daten
+  else {S=defaultProfile();}
   saveLocalState();
 }
-function saveS(){saveLocalState();if(sb&&USER&&USER.id!=='local'){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{sb.from('user_state').upsert({user_id:USER.id,data:S,updated_at:new Date().toISOString()}).then(()=>{},()=>{});}catch(e){}},600);}}
+function cloudPush(cb){
+  if(!(sb&&USER&&USER.id!=='local')){cb&&cb(null);return;}
+  try{
+    sb.from('user_state').upsert({user_id:USER.id,data:S,updated_at:new Date().toISOString()}).then(res=>{
+      if(res&&res.error){syncState='Fehler: '+res.error.message;}
+      else{syncState='synchronisiert · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+      if(curView==='profile')renderProfile();
+      cb&&cb(res?res.error:null);
+    },err=>{syncState='Fehler: '+(err&&err.message||err);if(curView==='profile')renderProfile();cb&&cb(err);});
+  }catch(e){syncState='Fehler: '+(e&&e.message||e);cb&&cb(e);}
+}
+function saveS(){saveLocalState();if(sb&&USER&&USER.id!=='local'){clearTimeout(saveTimer);saveTimer=setTimeout(()=>cloudPush(),600);}}
+function syncNow(){toast('Synchronisiere…');cloudPush(err=>{toast(err?('Sync-Fehler: '+(err.message||err)):'Synchronisiert ✓');renderProfile();});}
 function activeProfileName(){if(!USER)return 'Gast';const n=(USER.email||'').split('@')[0];return n||'Konto';}
 
 /* ---------- Auth-Oberfläche ---------- */
@@ -83,7 +98,7 @@ async function authSetNew(){if(!sb)return;const password=auPass();if(password.le
   toast('Passwort aktualisiert');showApp();
 }
 async function authLogout(){if(sb){try{await sb.auth.signOut();}catch(e){}}USER=null;showAuth();}
-async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();saveS();showApp();}else{USER=null;showAuth();}}
+async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();showApp();}else{USER=null;showAuth();}}
 async function boot(){
   document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
   initSupabase();
@@ -451,7 +466,9 @@ function renderProfile(){
   v.innerHTML=`
     <div class="sec-title">Konto</div>
     <div class="card" style="cursor:default;display:flex;align-items:center;gap:12px;margin-bottom:8px"><span style="font-size:1.6rem">👤</span><div style="flex:1;min-width:0"><b style="word-break:break-all">${esc(USER?USER.email:'lokal')}</b><div class="muted" style="font-size:.8rem">Angemeldet · Daten werden sicher in deinem Konto gespeichert</div></div></div>
-    <button class="btn danger block" onclick="authLogout()">Abmelden</button>
+    <div class="muted" style="font-size:.8rem;margin:10px 0 6px">☁️ Cloud-Sync: <b style="color:${/Fehler/.test(syncState)?'var(--coral)':'var(--green)'}">${esc(syncState)}</b></div>
+    <button class="btn ghost block" onclick="syncNow()">🔄 Jetzt synchronisieren</button>
+    <button class="btn danger block" style="margin-top:8px" onclick="authLogout()">Abmelden</button>
     <div class="sec-title">Ernährungsplan</div>
     ${MEAL_PLANS.map(p=>`<div class="planopt ${p.id===S.mealPlanId?'sel':''}" onclick="pickMealPlan('${p.id}')"><span class="pi">${p.icon}</span><div class="pt"><b>${esc(p.name)}</b><small>${esc(p.desc)}</small></div>${p.id===S.mealPlanId?'<span style="margin-left:auto;color:var(--coral)">✓</span>':''}</div>`).join('')}
     <div class="sec-title">Allergien &amp; Ausschlüsse</div>
