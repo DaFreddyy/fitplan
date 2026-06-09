@@ -69,6 +69,7 @@ function renderAuth(mode,msg,type){
       ${isRec?`
         <label class="fld"><span>Neues Passwort</span><input class="inp" id="auPass" type="password" autocomplete="new-password" placeholder="mind. 6 Zeichen"></label>
         <button class="btn block" onclick="authSetNew()">Passwort speichern</button>`:`
+        ${isReg?'<label class="fld"><span>Benutzername (für Freunde)</span><input class="inp" id="auName" autocomplete="username" placeholder="z. B. max_fit"></label>':''}
         <label class="fld"><span>E-Mail</span><input class="inp" id="auEmail" type="email" autocomplete="email" inputmode="email" placeholder="du@beispiel.de"></label>
         <label class="fld"><span>Passwort</span><input class="inp" id="auPass" type="password" autocomplete="${isReg?'new-password':'current-password'}" placeholder="${isReg?'mind. 6 Zeichen':'Passwort'}"></label>
         ${isReg?'':'<div class="forgot"><a onclick="authForgot()">Passwort vergessen?</a></div>'}
@@ -84,6 +85,8 @@ async function authLogin(){if(!sb){renderAuth('login','Keine Verbindung – bitt
   if(error){renderAuth('login',/confirm/i.test(error.message||'')?'Bitte bestätige zuerst deine E-Mail (Link im Postfach).':'Anmeldung fehlgeschlagen: '+error.message);}
 }
 async function authRegister(){if(!sb){renderAuth('register','Keine Verbindung – bitte online registrieren.');return;}const email=auEmail(),password=auPass();if(!email||password.length<6){renderAuth('register','Bitte E-Mail und Passwort (mind. 6 Zeichen).');return;}
+  const uname=($('auName')?$('auName').value:'').trim();
+  if(uname){if(!validName(uname)){renderAuth('register','Benutzername: 3–20 Zeichen (Buchstaben, Zahlen, _ .)');return;}try{localStorage.setItem('fitplan_wantname',uname);}catch(e){}}
   const {error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split('#')[0]}});
   if(error){renderAuth('register','Registrierung fehlgeschlagen: '+error.message);return;}
   renderAuth('login','Fast geschafft! Wir haben dir eine Bestätigungs-Mail geschickt. Bestätige den Link und melde dich dann an.','ok');
@@ -97,8 +100,8 @@ async function authSetNew(){if(!sb)return;const password=auPass();if(password.le
   if(error){renderAuth('recovery','Fehler: '+error.message);return;}
   toast('Passwort aktualisiert');showApp();
 }
-async function authLogout(){if(sb){try{await sb.auth.signOut();}catch(e){}}USER=null;showAuth();}
-async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();showApp();}else{USER=null;showAuth();}}
+async function authLogout(){if(sb){try{await sb.auth.signOut();}catch(e){}}USER=null;MY.username=null;showAuth();}
+async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();showApp();ensureUsername();}else{USER=null;MY.username=null;showAuth();}}
 async function boot(){
   document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
   initSupabase();
@@ -182,6 +185,7 @@ function render(){
   else if(curView==='training')renderTraining();
   else if(curView==='recipes')renderRecipes();
   else if(curView==='shop')renderShop();
+  else if(curView==='friends')renderFriends();
   else if(curView==='profile')renderProfile();
   $('profName').textContent=activeProfileName();
   $('profAv').textContent=(activeProfileName()[0]||'?').toUpperCase();
@@ -254,7 +258,7 @@ function openDay(dStr){
       <div class="actions"><button class="btn" onclick="startWorkout('${dStr}')">▶ Workout starten</button>${done?`<button class="btn ghost" onclick="toggleDone('${dStr}')">✓ erledigt</button>`:`<button class="btn ghost" onclick="toggleDone('${dStr}')">Als erledigt</button>`}</div>`}
     <div class="sec-title">Essen</div>${meals}`);
 }
-function toggleDone(dStr){if(S.done[dStr])delete S.done[dStr];else S.done[dStr]=true;saveS();openDay(dStr);drawCal();}
+function toggleDone(dStr){const turnOn=!S.done[dStr];if(turnOn){S.done[dStr]=true;recordActivity(effWorkout(parseYmd(dStr)).name,dStr);}else delete S.done[dStr];saveS();openDay(dStr);drawCal();}
 
 function openSwap(dStr,slot){
   const cat=MEAL_CATS[slot];const label=SLOTS.find(s=>s[0]===slot)[1];
@@ -389,7 +393,7 @@ function renderPlayer(){
 }
 function plNext(){
   if(PL.idx+1>=PL.steps.length){ // letzte Übung fertig
-    if(PL.dStr){PL.steps&&(S.done[PL.dStr]=true);saveS();drawCal();}
+    if(PL.dStr){S.done[PL.dStr]=true;saveS();recordActivity(PL.name,PL.dStr);drawCal();}
     plClose();toast('Workout abgeschlossen 💪');return;
   }
   PL.phase='rest';PL.remaining=REST_SEC;renderPlayer();startTick();
@@ -484,6 +488,98 @@ function renderProfile(){
 function pickMealPlan(id){S.mealPlanId=id;saveS();renderProfile();drawCal();toast('Ernährungsplan gewählt');}
 function saveExcl(){const t=$('exclInp').value;S.exclusions=t.split(',').map(x=>x.trim()).filter(Boolean);saveS();drawCal();toast('Ausschlüsse gespeichert');}
 function setStart(v){if(v){S.startDate=v;saveS();drawCal();toast('Startdatum gesetzt');}}
+
+/* ===================== BENUTZERNAME + SOCIAL ===================== */
+let MY={username:null};
+async function loadMyProfile(){MY.username=null;if(!(sb&&USER&&USER.id!=='local'))return;try{const {data}=await sb.from('profiles').select('username').eq('user_id',USER.id).maybeSingle();if(data&&data.username)MY.username=data.username;}catch(e){}}
+function validName(n){return /^[a-zA-Z0-9_.]{3,20}$/.test(n||'');}
+async function setUsername(name){name=(name||'').trim();if(!validName(name)){toast('3–20 Zeichen: Buchstaben, Zahlen, _ .');return false;}
+  try{const {error}=await sb.from('profiles').upsert({user_id:USER.id,username:name});
+    if(error){toast(/duplicate|unique/i.test(error.message||'')?'Name schon vergeben':'Fehler: '+error.message);return false;}
+    MY.username=name;try{localStorage.removeItem('fitplan_wantname');}catch(e){}toast('Benutzername: '+name);return true;}
+  catch(e){toast('Fehler: '+(e.message||e));return false;}}
+async function ensureUsername(){await loadMyProfile();if(MY.username)return;let want=null;try{want=localStorage.getItem('fitplan_wantname');}catch(e){}
+  if(want){if(await setUsername(want))return;}
+  openUsernamePrompt();}
+function openUsernamePrompt(){
+  let pre='';try{pre=localStorage.getItem('fitplan_wantname')||'';}catch(e){}
+  openOverlay(`<div class="phead"><span class="emoji">🏷️</span><div><h2>Benutzername wählen</h2><div class="pcat">damit Freunde dich finden &amp; adden können</div></div></div>
+    <label class="fld"><span>Benutzername</span><input class="inp" id="unInp" placeholder="z. B. max_fit" value="${esc(pre)}"></label>
+    <div class="actions"><button class="btn" onclick="saveUsernamePrompt()">Speichern</button><button class="btn ghost" onclick="closeOverlay()">Später</button></div>
+    <p class="faint" style="font-size:.78rem;margin-top:10px">3–20 Zeichen: Buchstaben, Zahlen, Unterstrich, Punkt.</p>`);}
+async function saveUsernamePrompt(){if(await setUsername($('unInp').value)){closeOverlay();render();if(curView==='friends')renderFriends();}}
+
+async function loadFriends(){
+  const out={accepted:[],incoming:[],outgoing:[]};
+  if(!(sb&&USER&&USER.id!=='local'))return out;
+  let fr=[];try{const {data}=await sb.from('friendships').select('*').or('requester.eq.'+USER.id+',addressee.eq.'+USER.id);fr=data||[];}catch(e){return out;}
+  const otherIds=[...new Set(fr.map(f=>f.requester===USER.id?f.addressee:f.requester))];
+  const names={};if(otherIds.length){try{const {data}=await sb.from('profiles').select('user_id,username').in('user_id',otherIds);(data||[]).forEach(p=>names[p.user_id]=p.username);}catch(e){}}
+  fr.forEach(f=>{const other=f.requester===USER.id?f.addressee:f.requester;const rec={id:f.id,otherId:other,username:names[other]||'unbekannt'};
+    if(f.status==='accepted')out.accepted.push(rec);else if(f.addressee===USER.id)out.incoming.push(rec);else out.outgoing.push(rec);});
+  return out;}
+async function addFriend(){const name=($('addNameInp').value||'').trim();if(!name)return;
+  if(name===MY.username){toast('Das bist du selbst 🙂');return;}
+  let p=null;try{const r=await sb.from('profiles').select('user_id,username').eq('username',name).maybeSingle();p=r.data;}catch(e){}
+  if(!p){toast('Kein Nutzer „'+name+'"');return;}
+  const f=await loadFriends();
+  if(f.accepted.find(x=>x.otherId===p.user_id)){toast('Ihr seid schon Freunde');return;}
+  const inc=f.incoming.find(x=>x.otherId===p.user_id);if(inc){await acceptRequest(inc.id);return;}
+  if(f.outgoing.find(x=>x.otherId===p.user_id)){toast('Anfrage läuft bereits');return;}
+  try{const {error}=await sb.from('friendships').insert({requester:USER.id,addressee:p.user_id,status:'pending'});if(error){toast('Fehler: '+error.message);return;}toast('Anfrage gesendet an '+name);$('addNameInp').value='';renderFriends();}catch(e){toast('Fehler: '+(e.message||e));}}
+async function acceptRequest(id){try{await sb.from('friendships').update({status:'accepted'}).eq('id',id);toast('Freund hinzugefügt');renderFriends();}catch(e){toast('Fehler');}}
+async function declineRequest(id){try{await sb.from('friendships').delete().eq('id',id);renderFriends();}catch(e){}}
+async function removeFriend(id){if(!confirm('Freund entfernen?'))return;try{await sb.from('friendships').delete().eq('id',id);renderFriends();}catch(e){}}
+
+async function loadFeed(friendIds){
+  const ids=[USER.id,...friendIds];const res={acts:[],names:{},likeCount:{},myLikes:{},comments:{}};
+  let acts=[];try{const {data}=await sb.from('activities').select('*').in('user_id',ids).order('created_at',{ascending:false}).limit(40);acts=data||[];}catch(e){return res;}
+  res.acts=acts;if(!acts.length)return res;
+  const aids=acts.map(a=>a.id);const uids=[...new Set(acts.map(a=>a.user_id))];
+  try{const {data}=await sb.from('profiles').select('user_id,username').in('user_id',uids);(data||[]).forEach(p=>res.names[p.user_id]=p.username);}catch(e){}
+  try{const {data}=await sb.from('likes').select('activity_id,user_id').in('activity_id',aids);(data||[]).forEach(l=>{res.likeCount[l.activity_id]=(res.likeCount[l.activity_id]||0)+1;if(l.user_id===USER.id)res.myLikes[l.activity_id]=true;});}catch(e){}
+  try{const {data}=await sb.from('comments').select('*').in('activity_id',aids).order('created_at',{ascending:true});const cu=[];(data||[]).forEach(c=>{(res.comments[c.activity_id]=res.comments[c.activity_id]||[]).push(c);if(!res.names[c.user_id])cu.push(c.user_id);});
+    const need=[...new Set(cu)];if(need.length){const {data:cp}=await sb.from('profiles').select('user_id,username').in('user_id',need);(cp||[]).forEach(p=>res.names[p.user_id]=p.username);}}catch(e){}
+  return res;}
+async function toggleLike(aid,on){try{if(on)await sb.from('likes').insert({activity_id:aid,user_id:USER.id});else await sb.from('likes').delete().eq('activity_id',aid).eq('user_id',USER.id);}catch(e){}renderFriends();}
+async function addComment(aid){const inp=document.getElementById('cmt_'+aid);const t=(inp.value||'').trim();if(!t)return;try{await sb.from('comments').insert({activity_id:aid,user_id:USER.id,text:t});inp.value='';}catch(e){toast('Fehler');}renderFriends();}
+async function recordActivity(title,dayStr){if(!(sb&&USER&&USER.id!=='local'&&MY&&MY.username))return;try{await sb.from('activities').insert({user_id:USER.id,title:title,day:dayStr});}catch(e){}}
+
+function av(name){return (name||'?').slice(0,1).toUpperCase();}
+function timeAgo(iso){const d=new Date(iso),s=(Date.now()-d.getTime())/1000;if(s<60)return 'gerade eben';if(s<3600)return Math.floor(s/60)+' min';if(s<86400)return Math.floor(s/3600)+' Std';return d.toLocaleDateString('de-DE',{day:'numeric',month:'short'});}
+
+async function renderFriends(){
+  const v=$('v-friends');
+  if(!(sb&&USER&&USER.id!=='local')){v.innerHTML='<div class="empty">Im Offline-Modus nicht verfügbar.</div>';return;}
+  if(!MY.username){
+    v.innerHTML=`<div class="sec-title">Benutzername</div>
+      <div class="card" style="cursor:default"><p class="muted" style="margin-bottom:10px">Lege einen Benutzernamen fest, damit Freunde dich finden und adden können.</p>
+      <label class="fld"><span>Benutzername</span><input class="inp" id="unInp2" placeholder="z. B. max_fit"></label>
+      <button class="btn block" onclick="(async()=>{if(await setUsername($('unInp2').value))renderFriends();})()">Speichern</button></div>`;return;}
+  v.innerHTML='<div class="empty">Lade…</div>';
+  const f=await loadFriends();const feed=await loadFeed(f.accepted.map(x=>x.otherId));
+  const inc=f.incoming.map(r=>`<div class="reqrow"><span class="fav">${av(r.username)}</span><span class="nm">${esc(r.username)}</span><button class="ok" onclick="acceptRequest('${r.id}')">Annehmen</button><button class="no" onclick="declineRequest('${r.id}')">✕</button></div>`).join('');
+  const fr=f.accepted.map(r=>`<div class="reqrow"><span class="fav">${av(r.username)}</span><span class="nm">${esc(r.username)}</span><button class="no" onclick="removeFriend('${r.id}')">entfernen</button></div>`).join('');
+  const outg=f.outgoing.map(r=>`<div class="reqrow"><span class="fav">${av(r.username)}</span><span class="nm">${esc(r.username)}</span><span class="faint" style="font-size:.78rem">angefragt</span></div>`).join('');
+  const feedHtml=feed.acts.length?feed.acts.map(a=>{
+    const nm=feed.names[a.user_id]||'?';const liked=!!feed.myLikes[a.id];const lc=feed.likeCount[a.id]||0;const cs=feed.comments[a.id]||[];
+    const cmts=cs.map(c=>`<div class="cmt"><b>${esc(feed.names[c.user_id]||'?')}</b> ${esc(c.text)}</div>`).join('');
+    return `<div class="feeditem">
+      <div class="fh"><span class="fav">${av(nm)}</span><div><div class="fn">${esc(nm)}${a.user_id===USER.id?' <span class="faint">(du)</span>':''}</div><div class="ft">${timeAgo(a.created_at)}</div></div></div>
+      <div class="fbody">💪 Workout erledigt: <b>${esc(a.title)}</b></div>
+      <div class="fact"><button class="${liked?'liked':''}" onclick="toggleLike('${a.id}',${liked?'false':'true'})">${liked?'❤️':'🤍'} ${lc>0?lc:''} Like</button><span class="faint" style="font-size:.82rem">${cs.length} Kommentar${cs.length===1?'':'e'}</span></div>
+      ${cmts?`<div class="cmtlist">${cmts}</div>`:''}
+      <div class="cmtbox"><input class="inp" id="cmt_${a.id}" placeholder="Kommentieren…"><button class="btn" onclick="addComment('${a.id}')">Senden</button></div>
+    </div>`;}).join(''):'<div class="empty">Noch keine Aktivitäten. Schließe ein Workout ab oder adde Freunde!</div>';
+  v.innerHTML=`
+    <div class="sec-title">Mein Profil</div>
+    <div class="card" style="cursor:default;display:flex;align-items:center;gap:11px"><span class="fav" style="width:40px;height:40px;font-size:1.1rem">${av(MY.username)}</span><div><b>@${esc(MY.username)}</b><div class="muted" style="font-size:.8rem">Diesen Namen geben Freunde beim Adden ein</div></div></div>
+    <div class="sec-title">Freund hinzufügen</div>
+    <div style="display:flex;gap:8px"><input class="inp" id="addNameInp" placeholder="Benutzername eingeben"><button class="btn" onclick="addFriend()">Adden</button></div>
+    ${inc?`<div class="sec-title">Anfragen <span class="badge">${f.incoming.length}</span></div>${inc}`:''}
+    ${fr?`<div class="sec-title">Freunde <span class="secount">${f.accepted.length}</span></div>${fr}`:''}
+    ${outg?`<div class="sec-title">Gesendet</div>${outg}`:''}
+    <div class="sec-title">Aktivitäten</div>${feedHtml}`;}
 
 /* ===================== BOOT ===================== */
 boot();

@@ -73,7 +73,30 @@
   .nav{position:fixed;left:0;right:0;bottom:0;z-index:60;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
     background:rgba(22,16,33,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex}
   .nav button{flex:1;background:none;border:none;color:var(--faint);font-family:var(--font);font-size:.66rem;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding-top:8px}
-  .nav button .ic{font-size:1.25rem;line-height:1}
+  .nav button{font-size:.6rem;padding-left:1px;padding-right:1px}
+  .nav button .ic{font-size:1.2rem;line-height:1}
+
+  /* freunde / feed */
+  .feeditem{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:13px;margin-bottom:10px}
+  .feeditem .fh{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .fav{width:34px;height:34px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#1a1024;font-weight:800;flex-shrink:0}
+  .feeditem .fn{font-weight:700}
+  .feeditem .ft{color:var(--faint);font-size:.74rem}
+  .feeditem .fbody{font-size:.95rem;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+  .feeditem .fact{display:flex;gap:16px;align-items:center;border-top:1px solid var(--line);padding-top:9px}
+  .feeditem .fact button{background:none;border:none;color:var(--muted);font-family:var(--font);font-size:.86rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .feeditem .fact button.liked{color:var(--coral)}
+  .cmtlist{margin-top:9px;display:flex;flex-direction:column;gap:4px}
+  .cmt{font-size:.86rem;line-height:1.4;padding:4px 0}
+  .cmt b{color:var(--ink)}
+  .cmtbox{display:flex;gap:8px;margin-top:9px}
+  .cmtbox input{flex:1}
+  .reqrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .reqrow .nm{flex:1;font-weight:600}
+  .reqrow button{border:none;border-radius:9px;padding:7px 11px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:var(--font)}
+  .reqrow .ok{background:var(--grad);color:#1a1024}
+  .reqrow .no{background:var(--surface-2);color:var(--coral);border:1px solid var(--line)}
+  .secount{color:var(--faint);font-weight:600;font-size:.78rem;margin-left:6px}
   .nav button.active{color:var(--ink)}
   .nav button.active .ic{filter:drop-shadow(0 0 10px rgba(255,94,122,.6))}
 
@@ -222,6 +245,7 @@
   <div class="view" id="v-training"></div>
   <div class="view" id="v-recipes"></div>
   <div class="view" id="v-shop"></div>
+  <div class="view" id="v-friends"></div>
   <div class="view" id="v-profile"></div>
 </div>
 
@@ -230,6 +254,7 @@
   <button data-v="training"><span class="ic">🏋️</span>Training</button>
   <button data-v="recipes"><span class="ic">🍽️</span>Rezepte</button>
   <button data-v="shop"><span class="ic">🛒</span>Einkauf</button>
+  <button data-v="friends"><span class="ic">👥</span>Freunde</button>
   <button data-v="profile"><span class="ic">👤</span>Profil</button>
 </nav>
 
