@@ -181,6 +181,24 @@
   .toast{position:fixed;bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#1a1024;font-weight:700;padding:11px 18px;border-radius:12px;font-size:.88rem;opacity:0;pointer-events:none;transition:all .3s;z-index:100;box-shadow:var(--shadow)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .empty{text-align:center;color:var(--muted);padding:40px 16px}
+
+  /* auth */
+  .authscreen{position:fixed;inset:0;z-index:120;display:none;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:calc(28px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+    background:radial-gradient(900px 500px at 80% -10%,rgba(255,154,61,.18),transparent 60%),radial-gradient(800px 500px at -10% 0%,rgba(255,94,122,.2),transparent 55%),var(--bg)}
+  .authscreen.open{display:flex}
+  .authcard{width:100%;max-width:380px;margin:auto}
+  .authcard .brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;text-align:center}
+  .authcard .brand .logo{width:60px;height:60px;border-radius:17px;font-size:30px}
+  .authcard .brand h1{font-size:1.6rem;font-weight:800}
+  .authcard .brand p{color:var(--muted);font-size:.85rem}
+  .authcard h2{font-size:1.15rem;font-weight:800;margin-bottom:14px;text-align:center}
+  .authcard .err{background:rgba(255,94,122,.12);border:1px solid #5a2740;color:var(--coral);border-radius:11px;padding:10px 12px;font-size:.85rem;margin-bottom:12px;line-height:1.4}
+  .authcard .ok{background:rgba(95,210,143,.12);border:1px solid #2f5a40;color:var(--green);border-radius:11px;padding:10px 12px;font-size:.85rem;margin-bottom:12px;line-height:1.4}
+  .authcard .swlink{text-align:center;margin-top:14px;color:var(--muted);font-size:.88rem}
+  .authcard .swlink a{color:var(--coral);font-weight:600;cursor:pointer;text-decoration:none}
+  .authcard .forgot{text-align:right;margin:-4px 0 12px}
+  .authcard .forgot a{color:var(--faint);font-size:.8rem;cursor:pointer}
+  .authcard .legal{color:var(--faint);font-size:.72rem;text-align:center;margin-top:18px;line-height:1.5}
   .pill-toggle{display:flex;flex-wrap:wrap;gap:8px}
   .pill-toggle button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:8px 14px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:var(--font)}
   .pill-toggle button.on{background:var(--grad);color:#1a1024;border-color:transparent}
@@ -217,8 +235,11 @@
 
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 <div class="player" id="player"></div>
+<div class="authscreen" id="auth"></div>
 <div class="toast" id="toast"></div>
 
+<script src="config.js"></script>
+<script src="vendor/supabase.js"></script>
 <script src="data/app-data.js"></script>
 <script src="app.js"></script>
 <script>

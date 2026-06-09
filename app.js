@@ -25,20 +25,75 @@ function planIdxFor(d){return (d.getDay()+6)%7;} // Mo=0 .. So=6
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
 function speak(text){try{if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=1;speechSynthesis.cancel();speechSynthesis.speak(u);}}catch(e){}}
 
-/* ---------- storage / profiles ---------- */
-const GKEY='fitplan_v1';
-let G={profiles:[],active:null};
-let S=null; // aktives Profil-Datenobjekt
-function loadG(){try{const r=localStorage.getItem(GKEY);if(r){const d=JSON.parse(r);if(d&&d.profiles)G=d;}}catch(e){}
-  if(!G.profiles.length){const id=uid();G.profiles=[{id,name:'Ich'}];G.active=id;saveG();}
-  if(!G.active||!G.profiles.find(p=>p.id===G.active))G.active=G.profiles[0].id;}
-function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G));}catch(e){}}
-function pkey(id){return 'fitplan_p_'+id;}
+/* ---------- Auth + State (Supabase) ---------- */
+let sb=null, USER=null, S=null, saveTimer=null;
+function initSupabase(){try{if(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_KEY){sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}}catch(e){sb=null;}return sb;}
 function defaultProfile(){return {trainingPlanId:'ganzkoerper',mealPlanId:'ausgewogen',startDate:'2026-06-07',exclusions:[],mealOv:{},workoutOv:{},exOv:{},done:{},shopDays:7,shopChecked:{}};}
-function loadProfile(){const id=G.active;let d=null;try{const r=localStorage.getItem(pkey(id));if(r)d=JSON.parse(r);}catch(e){}
-  S=Object.assign(defaultProfile(),d||{});}
-function saveS(){try{localStorage.setItem(pkey(G.active),JSON.stringify(S));}catch(e){}}
-function activeProfileName(){const p=G.profiles.find(x=>x.id===G.active);return p?p.name:'Profil';}
+function ukey(){return 'fitplan_u_'+(USER?USER.id:'anon');}
+function loadLocalState(){try{const r=localStorage.getItem(ukey());if(r)return JSON.parse(r);}catch(e){}return null;}
+function saveLocalState(){try{localStorage.setItem(ukey(),JSON.stringify(S));}catch(e){}}
+async function loadState(){
+  let remote=null;
+  if(sb&&USER){try{const {data,error}=await sb.from('user_state').select('data').eq('user_id',USER.id).maybeSingle();if(!error&&data&&data.data)remote=data.data;}catch(e){}}
+  S=Object.assign(defaultProfile(), loadLocalState()||{}, remote||{});
+  saveLocalState();
+}
+function saveS(){saveLocalState();if(sb&&USER&&USER.id!=='local'){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{sb.from('user_state').upsert({user_id:USER.id,data:S,updated_at:new Date().toISOString()}).then(()=>{},()=>{});}catch(e){}},600);}}
+function activeProfileName(){if(!USER)return 'Gast';const n=(USER.email||'').split('@')[0];return n||'Konto';}
+
+/* ---------- Auth-Oberfläche ---------- */
+function showApp(){$('auth').classList.remove('open');document.body.style.overflow='';go('plan');}
+function showAuth(){closeOverlay();$('auth').classList.add('open');document.body.style.overflow='hidden';renderAuth('login');}
+function renderAuth(mode,msg,type){
+  const isReg=mode==='register', isRec=mode==='recovery';
+  $('auth').innerHTML=`
+    <div class="authcard">
+      <div class="brand"><div class="logo">🏋️</div><h1>FitPlan</h1><p>Training · Ernährung · Einkauf</p></div>
+      <h2>${isRec?'Neues Passwort setzen':isReg?'Konto erstellen':'Anmelden'}</h2>
+      ${msg?`<div class="${type==='ok'?'ok':'err'}">${esc(msg)}</div>`:''}
+      ${isRec?`
+        <label class="fld"><span>Neues Passwort</span><input class="inp" id="auPass" type="password" autocomplete="new-password" placeholder="mind. 6 Zeichen"></label>
+        <button class="btn block" onclick="authSetNew()">Passwort speichern</button>`:`
+        <label class="fld"><span>E-Mail</span><input class="inp" id="auEmail" type="email" autocomplete="email" inputmode="email" placeholder="du@beispiel.de"></label>
+        <label class="fld"><span>Passwort</span><input class="inp" id="auPass" type="password" autocomplete="${isReg?'new-password':'current-password'}" placeholder="${isReg?'mind. 6 Zeichen':'Passwort'}"></label>
+        ${isReg?'':'<div class="forgot"><a onclick="authForgot()">Passwort vergessen?</a></div>'}
+        <button class="btn block" onclick="${isReg?'authRegister()':'authLogin()'}">${isReg?'Registrieren':'Anmelden'}</button>
+        <div class="swlink">${isReg?'Schon ein Konto? <a onclick="renderAuth(&quot;login&quot;)">Anmelden</a>':'Noch kein Konto? <a onclick="renderAuth(&quot;register&quot;)">Registrieren</a>'}</div>`}
+      <div class="legal">Geschützt durch Anmeldung &amp; Datenbank-Sicherheitsregeln (RLS) – jede:r sieht nur die eigenen Daten.</div>
+    </div>`;
+}
+function auEmail(){return ($('auEmail')?$('auEmail').value:'').trim();}
+function auPass(){return $('auPass')?$('auPass').value:'';}
+async function authLogin(){if(!sb){renderAuth('login','Keine Verbindung – bitte online anmelden.');return;}const email=auEmail(),password=auPass();if(!email||!password){renderAuth('login','Bitte E-Mail und Passwort eingeben.');return;}
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){renderAuth('login',/confirm/i.test(error.message||'')?'Bitte bestätige zuerst deine E-Mail (Link im Postfach).':'Anmeldung fehlgeschlagen: '+error.message);}
+}
+async function authRegister(){if(!sb){renderAuth('register','Keine Verbindung – bitte online registrieren.');return;}const email=auEmail(),password=auPass();if(!email||password.length<6){renderAuth('register','Bitte E-Mail und Passwort (mind. 6 Zeichen).');return;}
+  const {error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split('#')[0]}});
+  if(error){renderAuth('register','Registrierung fehlgeschlagen: '+error.message);return;}
+  renderAuth('login','Fast geschafft! Wir haben dir eine Bestätigungs-Mail geschickt. Bestätige den Link und melde dich dann an.','ok');
+}
+async function authForgot(){if(!sb)return;const email=auEmail();if(!email){renderAuth('login','Gib oben deine E-Mail ein – dann sende ich dir einen Reset-Link.');return;}
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split('#')[0]});
+  renderAuth('login',error?('Fehler: '+error.message):'Reset-Link gesendet – schau in dein Postfach.',error?'err':'ok');
+}
+async function authSetNew(){if(!sb)return;const password=auPass();if(password.length<6){renderAuth('recovery','Passwort braucht mind. 6 Zeichen.');return;}
+  const {error}=await sb.auth.updateUser({password});
+  if(error){renderAuth('recovery','Fehler: '+error.message);return;}
+  toast('Passwort aktualisiert');showApp();
+}
+async function authLogout(){if(sb){try{await sb.auth.signOut();}catch(e){}}USER=null;showAuth();}
+async function handleSession(session){if(session&&session.user){USER=session.user;await loadState();showApp();}else{USER=null;showAuth();}}
+async function boot(){
+  document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+  initSupabase();
+  if(!sb){USER={id:'local',email:'lokal'};await loadState();showApp();toast('Offline-Modus (lokal)');return;}
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){USER=session?session.user:null;$('auth').classList.add('open');document.body.style.overflow='hidden';renderAuth('recovery','Bitte vergib ein neues Passwort.');return;}
+    if(event==='SIGNED_IN'||event==='SIGNED_OUT')handleSession(session);
+  });
+  try{const {data}=await sb.auth.getSession();await handleSession(data?data.session:null);}catch(e){showAuth();}
+}
 
 /* ---------- meals ---------- */
 function startD(){return parseYmd(S.startDate||'2026-06-07');}
@@ -389,11 +444,11 @@ function resetShopChecks(){S.shopChecked={};saveS();genShop();}
 /* ===================== PROFIL / EINSTELLUNGEN ===================== */
 function renderProfile(){
   const v=$('v-profile');
-  const profs=G.profiles.map(p=>`<div class="planopt ${p.id===G.active?'sel':''}" onclick="switchProfile('${p.id}')"><span class="pi">${p.id===G.active?'🟢':'⚪'}</span><div class="pt"><b>${esc(p.name)}</b><small>${p.id===G.active?'aktiv':'antippen zum Wechseln'}</small></div><span class="swp" onclick="event.stopPropagation();renameProfile('${p.id}')">✎</span>${G.profiles.length>1?`<span class="swp" onclick="event.stopPropagation();deleteProfile('${p.id}')" style="color:var(--coral)">🗑</span>`:''}</div>`).join('');
   const mp=MPMAP[S.mealPlanId]||MEAL_PLANS[0];
   v.innerHTML=`
-    <div class="sec-title">Profile</div>${profs}
-    <button class="btn ghost block" onclick="addProfile()">+ Profil hinzufügen</button>
+    <div class="sec-title">Konto</div>
+    <div class="card" style="cursor:default;display:flex;align-items:center;gap:12px;margin-bottom:8px"><span style="font-size:1.6rem">👤</span><div style="flex:1;min-width:0"><b style="word-break:break-all">${esc(USER?USER.email:'lokal')}</b><div class="muted" style="font-size:.8rem">Angemeldet · Daten werden sicher in deinem Konto gespeichert</div></div></div>
+    <button class="btn danger block" onclick="authLogout()">Abmelden</button>
     <div class="sec-title">Ernährungsplan</div>
     ${MEAL_PLANS.map(p=>`<div class="planopt ${p.id===S.mealPlanId?'sel':''}" onclick="pickMealPlan('${p.id}')"><span class="pi">${p.icon}</span><div class="pt"><b>${esc(p.name)}</b><small>${esc(p.desc)}</small></div>${p.id===S.mealPlanId?'<span style="margin-left:auto;color:var(--coral)">✓</span>':''}</div>`).join('')}
     <div class="sec-title">Allergien &amp; Ausschlüsse</div>
@@ -404,16 +459,11 @@ function renderProfile(){
     <button class="btn ghost block" onclick="openPlanPicker()">${esc((TPMAP[S.trainingPlanId]||{}).name||'wählen')} – ändern</button>
     <label class="fld" style="margin-top:10px"><span>Programm-Start (Tag 1 = erstes Workout)</span><input class="inp" id="startInp" type="date" value="${S.startDate||'2026-06-07'}" onchange="setStart(this.value)"></label>
     <div class="sec-title">App teilen &amp; installieren</div>
-    <p class="muted" style="font-size:.85rem">Auf dem Handy: Teilen-Symbol → „Zum Home-Bildschirm". Dann startet FitPlan wie eine echte App und speichert deine Daten lokal auf dem Gerät. Den Link kannst du an Freunde schicken – jede:r hat eigene Profile &amp; Daten.</p>`;
+    <p class="muted" style="font-size:.85rem">Auf dem Handy: Teilen-Symbol → „Zum Home-Bildschirm". Dann startet FitPlan wie eine echte App. Den Link kannst du an Freunde schicken – jede:r <b>registriert ein eigenes Konto</b> und sieht nur die eigenen Daten (durch Anmeldung &amp; Datenbank-Sicherheitsregeln geschützt).</p>`;
 }
-function switchProfile(id){G.active=id;saveG();loadProfile();toast('Profil: '+activeProfileName());go(curView);}
-function addProfile(){const name=prompt('Name des neuen Profils:');if(!name)return;const id=uid();G.profiles.push({id,name:name.trim()});G.active=id;saveG();S=defaultProfile();saveS();renderProfile();render();toast('Profil angelegt');}
-function renameProfile(id){const p=G.profiles.find(x=>x.id===id);const name=prompt('Profil umbenennen:',p.name);if(!name)return;p.name=name.trim();saveG();renderProfile();render();}
-function deleteProfile(id){if(G.profiles.length<=1)return;if(!confirm('Profil wirklich löschen?'))return;try{localStorage.removeItem(pkey(id));}catch(e){}G.profiles=G.profiles.filter(p=>p.id!==id);if(G.active===id)G.active=G.profiles[0].id;saveG();loadProfile();renderProfile();render();toast('Profil gelöscht');}
 function pickMealPlan(id){S.mealPlanId=id;saveS();renderProfile();drawCal();toast('Ernährungsplan gewählt');}
 function saveExcl(){const t=$('exclInp').value;S.exclusions=t.split(',').map(x=>x.trim()).filter(Boolean);saveS();drawCal();toast('Ausschlüsse gespeichert');}
 function setStart(v){if(v){S.startDate=v;saveS();drawCal();toast('Startdatum gesetzt');}}
 
 /* ===================== BOOT ===================== */
-document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
-loadG();loadProfile();go('plan');
+boot();
