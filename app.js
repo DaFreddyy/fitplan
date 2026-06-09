@@ -294,12 +294,15 @@ function recServ(id,dir){const r=RMAP[id];const cur=recDetailServ[id]||r.serving
 /* ===================== TRAINING ===================== */
 function renderTraining(){
   const v=$('v-training');const plan=TPMAP[S.trainingPlanId]||TRAINING_PLANS[0];
-  const days=plan.days.map((day,i)=>{
+  const startW=startD().getDay(); // Wochentag des Programm-Starts (0=So)
+  // Mo..So zeigen, aber je Wochentag den Plan-Tag nehmen, der laut Startdatum darauf faellt – identisch zum Kalender
+  const days=[1,2,3,4,5,6,0].map(wd=>{
+    const i=(((wd-startW)%7)+7)%7;const day=plan.days[i]||{t:'rest',name:'Ruhetag',items:[]};
     const w=applyExOv(Object.assign({},day,{planId:plan.id,dayIdx:i}));
-    const exs=(w.items||[]).map(it=>{const ex=EXERCISES[it.ex];if(!ex)return '';const meta=it.dur?it.sets+'×'+it.dur+'s':it.sets+'×'+it.reps;
+    const exs=(w.items||[]).map(it=>{const ex=EXERCISES[it.ex];if(!ex)return '';
       return `<div class="exitem"><div class="x" onclick="openExercise('${it.ex}','ex')"><b>${esc(ex.name)}</b><small>${metaOf(it)}</small></div><button class="swp" onclick="openExSwap('${plan.id}',${i},'${it.ex}')">tauschen</button></div>`;}).join('');
     return `<div class="card" style="cursor:default;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:9px;margin-bottom:${w.t==='rest'?'0':'8px'}"><b style="font-size:.78rem;color:var(--faint);width:26px">${['Mo','Di','Mi','Do','Fr','Sa','So'][i]}</b><span style="font-size:1.2rem">${w.t==='cardio'?'🔥':w.t==='mobility'?'🧘':w.t==='rest'?'😴':'💪'}</span><b style="flex:1">${esc(w.name)}</b>${w.t!=='rest'?`<button class="swp" onclick="startWorkoutPlan('${plan.id}',${i})">▶ Start</button>`:''}</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:${w.t==='rest'?'0':'8px'}"><b style="font-size:.78rem;color:var(--faint);width:26px">${DOW[wd]}</b><span style="font-size:1.2rem">${w.t==='cardio'?'🔥':w.t==='mobility'?'🧘':w.t==='rest'?'😴':'💪'}</span><b style="flex:1">${esc(w.name)}</b>${w.t!=='rest'?`<button class="swp" onclick="startWorkoutPlan('${plan.id}',${i})">▶ Start</button>`:''}</div>
       ${exs}</div>`;
   }).join('');
   v.innerHTML=`
