@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const DAY_MS=86400000;
 const DOW=['So','Mo','Di','Mi','Do','Fr','Sa'];
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-const SLOTS=[['fr','Frühstück'],['mi','Mittag'],['ab','Abend'],['sn','Snack']];
+const SLOTS=[['fr','Frühstück'],['mi','Mittagessen'],['ab','Abendessen'],['sn','Snack']];
 const REST_SEC=45;
 const RMAP={};RECIPES.forEach(r=>RMAP[r.id]=r);
 const TPMAP={};TRAINING_PLANS.forEach(p=>TPMAP[p.id]=p);
@@ -20,6 +20,7 @@ function isToday(d){return ymd(d)===ymd(todayMid());}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmtNum(n){let v=Number(n);v=v>=10?Math.round(v):Math.round(v*10)/10;return String(v).replace('.',',');}
 function uid(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function metaOf(it){if(it.note)return it.note;if(it.dur)return it.sets+'×'+it.dur+' Sek';return it.sets+'×'+it.reps+' Wdh';}
 function planIdxFor(d){return (d.getDay()+6)%7;} // Mo=0 .. So=6
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
 function speak(text){try{if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=1;speechSynthesis.cancel();speechSynthesis.speak(u);}}catch(e){}}
@@ -33,15 +34,23 @@ function loadG(){try{const r=localStorage.getItem(GKEY);if(r){const d=JSON.parse
   if(!G.active||!G.profiles.find(p=>p.id===G.active))G.active=G.profiles[0].id;}
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G));}catch(e){}}
 function pkey(id){return 'fitplan_p_'+id;}
-function defaultProfile(){return {trainingPlanId:'ganzkoerper',mealPlanId:'ausgewogen',exclusions:[],mealOv:{},workoutOv:{},exOv:{},done:{},shopDays:7,shopChecked:{}};}
+function defaultProfile(){return {trainingPlanId:'ganzkoerper',mealPlanId:'ausgewogen',startDate:'2026-06-07',exclusions:[],mealOv:{},workoutOv:{},exOv:{},done:{},shopDays:7,shopChecked:{}};}
 function loadProfile(){const id=G.active;let d=null;try{const r=localStorage.getItem(pkey(id));if(r)d=JSON.parse(r);}catch(e){}
   S=Object.assign(defaultProfile(),d||{});}
 function saveS(){try{localStorage.setItem(pkey(G.active),JSON.stringify(S));}catch(e){}}
 function activeProfileName(){const p=G.profiles.find(x=>x.id===G.active);return p?p.name:'Profil';}
 
 /* ---------- meals ---------- */
-const MEAL_EPOCH=midnight(new Date(2024,0,1)).getTime();
-function dayOffset(d){return Math.round((midnight(d).getTime()-MEAL_EPOCH)/DAY_MS);}
+function startD(){return parseYmd(S.startDate||'2026-06-07');}
+function mealOffset(d){return Math.floor((midnight(d).getTime()-startD().getTime())/DAY_MS);}
+function pickDaily(pool,off){if(!pool.length)return '';return pool[((off%pool.length)+pool.length)%pool.length].id;}
+function pickBatch(pool,off){ // Meal-Prep: Gericht bleibt über seine Portionszahl (max 3) mehrere Tage
+  if(!pool.length)return '';
+  const spans=pool.map(r=>Math.max(1,Math.min(3,r.servings||1)));
+  const cyc=spans.reduce((a,b)=>a+b,0);let p=((off%cyc)+cyc)%cyc;
+  for(let i=0;i<pool.length;i++){if(p<spans[i])return pool[i].id;p-=spans[i];}
+  return pool[0].id;
+}
 function excluded(r){
   if(!S.exclusions.length)return false;
   const hay=(r.title+' '+r.ings.map(i=>i.n).join(' ')).toLowerCase();
@@ -54,12 +63,19 @@ function poolFor(cat){
   if(!pool.length)pool=RECIPES.filter(r=>r.cat===cat);
   return pool;
 }
-function autoMeal(d,slotIdx,cat){const pool=poolFor(cat);if(!pool.length)return '';const o=dayOffset(d)+slotIdx*5;return pool[((o%pool.length)+pool.length)%pool.length].id;}
+const MEAL_CATS={fr:'Frühstück',mi:'Mittagessen',ab:'Abendessen',sn:'Snack'};
+function autoMeal(d,slot){const pool=poolFor(MEAL_CATS[slot]);const off=mealOffset(d);
+  if(slot==='mi')return pickBatch(pool,off);
+  if(slot==='ab')return pickBatch(pool,off+7);
+  if(slot==='sn')return pickDaily(pool,off+2);
+  return pickDaily(pool,off);
+}
 function effMeals(d){
-  const ov=(S.mealOv[ymd(d)])||{};const cats=['Frühstück','Mittag','Abend','Snack'];
-  const o={};SLOTS.forEach((s,i)=>{o[s[0]]=ov[s[0]]!==undefined?ov[s[0]]:autoMeal(d,i,cats[i]);});
+  const ov=(S.mealOv[ymd(d)])||{};const o={};
+  SLOTS.forEach(s=>{o[s[0]]=ov[s[0]]!==undefined?ov[s[0]]:autoMeal(d,s[0]);});
   return o;
 }
+function isLeftover(d,slot){if(slot!=='mi'&&slot!=='ab')return false;const id=effMeals(d)[slot];if(!id)return false;const prev=effMeals(new Date(midnight(d).getTime()-DAY_MS))[slot];return prev===id;}
 function setMeal(dStr,slot,id){const k=dStr;const ov=S.mealOv[k]||(S.mealOv[k]={});ov[slot]=id;saveS();}
 
 /* ---------- workouts ---------- */
@@ -67,7 +83,7 @@ function baseWorkout(d){
   const ov=S.workoutOv[ymd(d)];
   let planId,dayIdx;
   if(ov){if(ov.rest)return {t:'rest',name:'Ruhetag',items:[],planId:null,dayIdx:-1};planId=ov.planId;dayIdx=ov.dayIdx;}
-  else {planId=S.trainingPlanId;dayIdx=planIdxFor(d);}
+  else {planId=S.trainingPlanId;dayIdx=((mealOffset(d)%7)+7)%7;}
   const plan=TPMAP[planId]||TPMAP[S.trainingPlanId]||TRAINING_PLANS[0];
   const day=plan.days[dayIdx]||{t:'rest',name:'Ruhetag',items:[]};
   return Object.assign({},day,{planId:plan.id,dayIdx});
@@ -156,10 +172,10 @@ $('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeOverla
 function openDay(dStr){
   const d=parseYmd(dStr);const w=effWorkout(d);const m=effMeals(d);
   const done=!!S.done[dStr]&&w.t!=='rest';
-  const exHtml=(w.items||[]).map(it=>{const ex=EXERCISES[it.ex];if(!ex)return '';const meta=it.dur?it.sets+'×'+it.dur+' Sek':it.sets+'×'+it.reps+' Wdh';
-    return `<div class="exitem"><div class="x" onclick="openExercise('${it.ex}','day','${dStr}')"><b>${esc(ex.name)}</b><small>${meta} · ${esc(ex.muscles)}</small></div></div>`;}).join('');
-  const meals=SLOTS.map(s=>{const r=RMAP[m[s[0]]];if(!r)return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">➕</span><span class="info"><span class="rcat">${s[1]}</span><b>Gericht wählen</b></span><span class="go">›</span></button>`;
-    return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">${r.emoji}</span><span class="info"><span class="rcat">${s[1]} · tauschen</span><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten</small></span><span class="go" onclick="event.stopPropagation();openRecipe('${r.id}')">🔍</span></button>`;}).join('');
+  const exHtml=(w.items||[]).map(it=>{const ex=EXERCISES[it.ex];if(!ex)return '';
+    return `<div class="exitem"><div class="x" onclick="openExercise('${it.ex}','day','${dStr}')"><b>${esc(ex.name)}</b><small>${metaOf(it)} · ${esc(ex.muscles)}</small></div></div>`;}).join('');
+  const meals=SLOTS.map(s=>{const r=RMAP[m[s[0]]];const lo=isLeftover(d,s[0]);if(!r)return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">➕</span><span class="info"><span class="rcat">${s[1]}</span><b>Gericht wählen</b></span><span class="go">›</span></button>`;
+    return `<button class="lrow" onclick="openSwap('${dStr}','${s[0]}')"><span class="em">${r.emoji}</span><span class="info"><span class="rcat">${s[1]}${lo?' · ♻ Meal Prep':''} · tauschen</span><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten</small></span><span class="go" onclick="event.stopPropagation();openRecipe('${r.id}')">🔍</span></button>`;}).join('');
   openOverlay(`
     <div class="phead"><span class="emoji">${wIcon(w)}</span><div><h2>${DOW[d.getDay()]}</h2><div class="pcat">${d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}</div></div><button class="close" onclick="closeOverlay()">✕</button></div>
     <div class="sec-title">Training · ${esc(w.name)}</div>
@@ -171,7 +187,7 @@ function openDay(dStr){
 function toggleDone(dStr){if(S.done[dStr])delete S.done[dStr];else S.done[dStr]=true;saveS();openDay(dStr);drawCal();}
 
 function openSwap(dStr,slot){
-  const cat={fr:'Frühstück',mi:'Mittag',ab:'Abend',sn:'Snack'}[slot];const label=SLOTS.find(s=>s[0]===slot)[1];
+  const cat=MEAL_CATS[slot];const label=SLOTS.find(s=>s[0]===slot)[1];
   const cur=effMeals(parseYmd(dStr))[slot];
   const rows=RECIPES.filter(r=>r.cat===cat).map(r=>`<button class="lrow ${r.id===cur?'cur':''}" onclick="setMeal('${dStr}','${slot}','${r.id}');toast('Getauscht');openDay('${dStr}')"><span class="em">${r.emoji}</span><span class="info"><b>${esc(r.title)}</b><small>${r.ings.length} Zutaten · ${r.servings} Port.${excluded(r)?' · ⚠ ausgeschlossen':''}</small></span>${r.id===cur?'<span class="go">✓</span>':'<span class="go">›</span>'}</button>`).join('');
   openOverlay(`<div class="phead"><span class="emoji">🍽️</span><div><h2>${label} wählen</h2><div class="pcat">${parseYmd(dStr).toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}</div></div><button class="close" onclick="closeOverlay()">✕</button></div>
@@ -226,7 +242,7 @@ function renderTraining(){
   const days=plan.days.map((day,i)=>{
     const w=applyExOv(Object.assign({},day,{planId:plan.id,dayIdx:i}));
     const exs=(w.items||[]).map(it=>{const ex=EXERCISES[it.ex];if(!ex)return '';const meta=it.dur?it.sets+'×'+it.dur+'s':it.sets+'×'+it.reps;
-      return `<div class="exitem"><div class="x" onclick="openExercise('${it.ex}','ex')"><b>${esc(ex.name)}</b><small>${meta}</small></div><button class="swp" onclick="openExSwap('${plan.id}',${i},'${it.ex}')">tauschen</button></div>`;}).join('');
+      return `<div class="exitem"><div class="x" onclick="openExercise('${it.ex}','ex')"><b>${esc(ex.name)}</b><small>${metaOf(it)}</small></div><button class="swp" onclick="openExSwap('${plan.id}',${i},'${it.ex}')">tauschen</button></div>`;}).join('');
     return `<div class="card" style="cursor:default;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:${w.t==='rest'?'0':'8px'}"><b style="font-size:.78rem;color:var(--faint);width:26px">${['Mo','Di','Mi','Do','Fr','Sa','So'][i]}</b><span style="font-size:1.2rem">${w.t==='cardio'?'🔥':w.t==='mobility'?'🧘':w.t==='rest'?'😴':'💪'}</span><b style="flex:1">${esc(w.name)}</b>${w.t!=='rest'?`<button class="swp" onclick="startWorkoutPlan('${plan.id}',${i})">▶ Start</button>`:''}</div>
       ${exs}</div>`;
@@ -267,7 +283,7 @@ function startPlayer(steps,name,dStr){
 function plClose(){if(PL&&PL.timer)clearInterval(PL.timer);speechSynthesis&&speechSynthesis.cancel&&speechSynthesis.cancel();$('player').classList.remove('open');document.body.style.overflow='';PL=null;render();}
 function renderPlayer(){
   const p=$('player');const total=PL.steps.length;const cur=PL.steps[PL.idx];const ex=cur.ex,it=cur.it;
-  const meta=it.dur?(it.sets+' Sätze × '+it.dur+' Sek'):(it.sets+' Sätze × '+it.reps+' Wdh');
+  const meta=it.note?it.note:(it.dur?(it.sets+' Sätze × '+it.dur+' Sek'):(it.sets+' Sätze × '+it.reps+' Wdh'));
   const prog=Math.round(((PL.idx)/total)*100);
   if(PL.phase==='ex'){
     p.innerHTML=`
@@ -321,7 +337,7 @@ function startTick(){
 /* ===================== REZEPTE ===================== */
 let recFilter='Alle',recSearch='';
 function renderRecipes(){
-  const v=$('v-recipes');const cats=['Alle','Frühstück','Mittag','Abend','Snack'];
+  const v=$('v-recipes');const cats=['Alle','Frühstück','Mittagessen','Abendessen','Snack'];
   let list=RECIPES.filter(r=>recFilter==='Alle'||r.cat===recFilter);
   if(recSearch){const s=recSearch.toLowerCase();list=list.filter(r=>r.title.toLowerCase().includes(s)||r.ings.some(i=>i.n.toLowerCase().includes(s)));}
   const cards=list.map(r=>`<div class="card rcard" onclick="openRecipe('${r.id}')"><span class="tag">${r.cat}</span><span class="emoji">${r.emoji}</span><h3>${esc(r.title)}</h3><div class="meta">🍽 ${r.servings} Port. · ${r.ings.length} Zutaten</div></div>`).join('');
@@ -380,12 +396,13 @@ function renderProfile(){
     <button class="btn ghost block" onclick="addProfile()">+ Profil hinzufügen</button>
     <div class="sec-title">Ernährungsplan</div>
     ${MEAL_PLANS.map(p=>`<div class="planopt ${p.id===S.mealPlanId?'sel':''}" onclick="pickMealPlan('${p.id}')"><span class="pi">${p.icon}</span><div class="pt"><b>${esc(p.name)}</b><small>${esc(p.desc)}</small></div>${p.id===S.mealPlanId?'<span style="margin-left:auto;color:var(--coral)">✓</span>':''}</div>`).join('')}
-    <div class="sec-title">Lebensmittel ausschließen</div>
-    <p class="muted" style="font-size:.85rem;margin-bottom:8px">Komma-getrennt. Rezepte mit diesen Begriffen (Titel oder Zutat) werden nicht vorgeschlagen – z. B. <i>Tofu, Fisch, Ei</i>.</p>
+    <div class="sec-title">Allergien &amp; Ausschlüsse</div>
+    <p class="muted" style="font-size:.85rem;margin-bottom:8px">Zutaten/Lebensmittel, die du wegen <b>Allergien oder Vorlieben</b> meiden willst – komma-getrennt. Rezepte mit diesen Begriffen (Titel oder Zutat) werden nicht vorgeschlagen, z. B. <i>Tofu, Fisch, Ei, Nüsse, Laktose</i>.</p>
     <textarea class="inp" id="exclInp" rows="2" placeholder="z. B. Thunfisch, Makrele, Tofu">${esc(S.exclusions.join(', '))}</textarea>
     <button class="btn block" style="margin-top:10px" onclick="saveExcl()">Ausschlüsse speichern</button>
     <div class="sec-title">Trainingsplan</div>
     <button class="btn ghost block" onclick="openPlanPicker()">${esc((TPMAP[S.trainingPlanId]||{}).name||'wählen')} – ändern</button>
+    <label class="fld" style="margin-top:10px"><span>Programm-Start (Tag 1 = erstes Workout)</span><input class="inp" id="startInp" type="date" value="${S.startDate||'2026-06-07'}" onchange="setStart(this.value)"></label>
     <div class="sec-title">App teilen &amp; installieren</div>
     <p class="muted" style="font-size:.85rem">Auf dem Handy: Teilen-Symbol → „Zum Home-Bildschirm". Dann startet FitPlan wie eine echte App und speichert deine Daten lokal auf dem Gerät. Den Link kannst du an Freunde schicken – jede:r hat eigene Profile &amp; Daten.</p>`;
 }
@@ -395,6 +412,7 @@ function renameProfile(id){const p=G.profiles.find(x=>x.id===id);const name=prom
 function deleteProfile(id){if(G.profiles.length<=1)return;if(!confirm('Profil wirklich löschen?'))return;try{localStorage.removeItem(pkey(id));}catch(e){}G.profiles=G.profiles.filter(p=>p.id!==id);if(G.active===id)G.active=G.profiles[0].id;saveG();loadProfile();renderProfile();render();toast('Profil gelöscht');}
 function pickMealPlan(id){S.mealPlanId=id;saveS();renderProfile();drawCal();toast('Ernährungsplan gewählt');}
 function saveExcl(){const t=$('exclInp').value;S.exclusions=t.split(',').map(x=>x.trim()).filter(Boolean);saveS();drawCal();toast('Ausschlüsse gespeichert');}
+function setStart(v){if(v){S.startDate=v;saveS();drawCal();toast('Startdatum gesetzt');}}
 
 /* ===================== BOOT ===================== */
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
